@@ -52,14 +52,16 @@ export default function TasksPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main className="container mx-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <aside className="lg:col-span-3">
+      <main className="container mx-auto py-6">
+        {/* Mobile Layout */}
+        <div className="block lg:hidden space-y-6">
+          {/* Task List - Collapsible */}
           <Card>
             <CardHeader>
-              <CardTitle>Задачи</CardTitle>
+              <CardTitle>Задачи ({taskIdx + 1}/{tasks.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 {tasks.map((task, i) => {
                   const isSolved = progress.solvedTaskIds.includes(task.id);
                   const isCurrent = i === taskIdx;
@@ -67,31 +69,30 @@ export default function TasksPage() {
                     <Button
                       key={task.id}
                       variant={isCurrent ? 'default' : 'ghost'}
-                      className="w-full justify-start"
+                      className="text-xs h-auto p-2"
                       onClick={() => setTaskIdx(i)}
                     >
-                      <span className="mr-2">
+                      <span className="mr-1">
                         {isSolved ? '✅' : '🔓'}
                       </span>
-                      <span className="truncate">{task.title}</span>
+                      <span className="truncate">{task.id}</span>
                     </Button>
                   );
                 })}
               </div>
             </CardContent>
           </Card>
-        </aside>
 
-        <section className="lg:col-span-6">
+          {/* Main Task */}
           <Card>
             <CardHeader>
-              <CardTitle>{currentTask.title}</CardTitle>
+              <CardTitle className="text-lg">{currentTask.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 prose prose-sm max-w-none dark:prose-invert">
+              <div className="mb-4 prose prose-sm max-w-none dark:prose-invert text-sm">
                 <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
               </div>
-              <GitGraph state={git.repo} height={320} />
+              <GitGraph state={git.repo} height={280} />
               
               {/* Task Progress */}
               <div className="mt-4">
@@ -101,18 +102,16 @@ export default function TasksPage() {
                 />
               </div>
 
-              <div className="mt-4 flex gap-2">
-                <Button variant="secondary" onClick={() => git.reset(currentTask.initial)}>
-                  Сбросить задачу
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="secondary" onClick={() => git.reset(currentTask.initial)} className="text-xs">
+                  Сбросить
                 </Button>
-                <Button variant="outline" onClick={() => setShowHint(!showHint)}>
-                  {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+                <Button variant="outline" onClick={() => setShowHint(!showHint)} className="text-xs">
+                  {showHint ? 'Скрыть подсказку' : 'Подсказку'}
                 </Button>
-                {isCompleted && (
-                  <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)}>
-                    {showExplanation ? 'Скрыть объяснение' : 'Показать объяснение'}
-                  </Button>
-                )}
+                <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)} className="text-xs">
+                  {showExplanation ? 'Скрыть объяснение' : 'Объяснение'}
+                </Button>
               </div>
               
               {showHint && (
@@ -130,11 +129,94 @@ export default function TasksPage() {
               )}
             </CardContent>
           </Card>
-        </section>
 
-        <aside className="lg:col-span-3">
+          {/* Actions Panel */}
           <SmartActionsPanel allowedOps={currentTask.allowedOps} />
-        </aside>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden lg:grid grid-cols-12 gap-6">
+          <aside className="col-span-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Задачи</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {tasks.map((task, i) => {
+                    const isSolved = progress.solvedTaskIds.includes(task.id);
+                    const isCurrent = i === taskIdx;
+                    return (
+                      <Button
+                        key={task.id}
+                        variant={isCurrent ? 'default' : 'ghost'}
+                        className="w-full justify-start"
+                        onClick={() => setTaskIdx(i)}
+                      >
+                        <span className="mr-2">
+                          {isSolved ? '✅' : '🔓'}
+                        </span>
+                        <span className="truncate">{task.title}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
+
+          <section className="col-span-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{currentTask.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 prose prose-sm max-w-none dark:prose-invert">
+                  <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
+                </div>
+                <GitGraph state={git.repo} height={320} />
+                
+                {/* Task Progress */}
+                <div className="mt-4">
+                  <TaskFeedback 
+                    currentState={git.repo}
+                    targetAssertions={currentTask.target}
+                  />
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <Button variant="secondary" onClick={() => git.reset(currentTask.initial)}>
+                    Сбросить задачу
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowHint(!showHint)}>
+                    {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)}>
+                    {showExplanation ? 'Скрыть объяснение' : 'Показать объяснение'}
+                  </Button>
+                </div>
+                
+                {showHint && (
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+                    <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">💡 Подсказка</div>
+                    {currentTask.hint}
+                  </div>
+                )}
+                
+                {showExplanation && (
+                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+                    <div className="font-medium text-green-800 dark:text-green-200 mb-1">✅ Объяснение</div>
+                    {currentTask.explanation}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+
+          <aside className="col-span-3">
+            <SmartActionsPanel allowedOps={currentTask.allowedOps} />
+          </aside>
+        </div>
       </main>
       <Footer />
     </div>

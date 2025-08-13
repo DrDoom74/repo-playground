@@ -28,8 +28,8 @@ interface LayoutPath {
 }
 
 const COMMIT_RADIUS = 6;
-const COMMIT_SPACING_Y = 40;
-const LANE_WIDTH = 30;
+const COMMIT_SPACING_Y = 60;
+const LANE_WIDTH = 40;
 const PADDING = 40;
 
 const BRANCH_COLORS = [
@@ -117,15 +117,26 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
               {commit.message.length > 30 ? commit.message.slice(0, 30) + '...' : commit.message}
             </text>
             
-            {/* HEAD indicator */}
+            {/* HEAD indicator with background */}
             {commit.isHead && (
-              <text
-                x={commit.x - 30}
-                y={commit.y + 4}
-                className="text-xs font-bold fill-primary"
-              >
-                HEAD
-              </text>
+              <g>
+                <rect
+                  x={commit.x - 45}
+                  y={commit.y - 8}
+                  width="40"
+                  height="16"
+                  rx="8"
+                  fill="hsl(var(--primary))"
+                  stroke="hsl(var(--border))"
+                />
+                <text
+                  x={commit.x - 25}
+                  y={commit.y + 4}
+                  className="text-xs font-bold fill-primary-foreground"
+                >
+                  HEAD
+                </text>
+              </g>
             )}
             
             {/* Branch labels */}
@@ -133,17 +144,17 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
               <g key={branch}>
                 <rect
                   x={commit.x + COMMIT_RADIUS + 8}
-                  y={commit.y + 24 + i * 16}
-                  width={branch.length * 6 + 8}
-                  height="14"
-                  rx="7"
-                  fill="hsl(var(--primary))"
+                  y={commit.y + 30 + i * 18}
+                  width={branch.length * 6 + 12}
+                  height="16"
+                  rx="8"
+                  fill="hsl(var(--secondary))"
                   stroke="hsl(var(--border))"
                 />
                 <text
-                  x={commit.x + COMMIT_RADIUS + 12}
-                  y={commit.y + 35 + i * 16}
-                  className="text-xs fill-primary-foreground font-medium"
+                  x={commit.x + COMMIT_RADIUS + 14}
+                  y={commit.y + 42 + i * 18}
+                  className="text-xs fill-secondary-foreground font-medium"
                 >
                   {branch}
                 </text>

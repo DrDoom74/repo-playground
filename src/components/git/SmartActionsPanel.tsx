@@ -73,7 +73,7 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
 
   const runCommand = (command: string) => {
     setCmd(command);
-    executeCommand(command);
+    setShowSuggestions(false);
   };
 
   const executeCommand = (command: string = cmd) => {
@@ -100,7 +100,11 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
 
   const currentValidation = useMemo(() => {
     if (!cmd.trim()) return null;
-    return validateCommand(cmd.trim(), git.repo);
+    const validation = validateCommand(cmd.trim(), git.repo);
+    return {
+      ...validation,
+      type: validation.valid ? 'success' : validation.suggestion ? 'hint' : 'error'
+    };
   }, [cmd, git.repo]);
 
   const filteredSuggestions = suggestions.filter(s => 
@@ -185,10 +189,22 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
               
               {/* Validation feedback */}
               {currentValidation && !currentValidation.valid && (
-                <div className="flex items-start gap-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
-                  <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                <div className={`flex items-start gap-2 p-2 rounded-md ${
+                  currentValidation.type === 'hint' 
+                    ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
+                    : 'bg-destructive/10 border border-destructive/20'
+                }`}>
+                  <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                    currentValidation.type === 'hint' 
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-destructive'
+                  }`} />
                   <div className="text-sm">
-                    <div className="text-destructive font-medium">{currentValidation.error}</div>
+                    <div className={`font-medium ${
+                      currentValidation.type === 'hint' 
+                        ? 'text-blue-800 dark:text-blue-200'
+                        : 'text-destructive'
+                    }`}>{currentValidation.error}</div>
                     {currentValidation.suggestion && (
                       <div className="text-muted-foreground mt-1">{currentValidation.suggestion}</div>
                     )}
@@ -204,7 +220,10 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
                   <button
                     key={i}
                     className="w-full text-left p-2 hover:bg-muted border-b border-border last:border-b-0 text-sm"
-                    onClick={() => runCommand(suggestion.command)}
+                    onClick={() => {
+                      setCmd(suggestion.command);
+                      setShowSuggestions(false);
+                    }}
                   >
                     <div className="font-mono text-primary">{suggestion.command}</div>
                     <div className="text-xs text-muted-foreground">{suggestion.description}</div>
