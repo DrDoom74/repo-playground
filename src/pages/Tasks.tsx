@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { GitGraph } from '@/components/git/GitGraph';
-import { ActionsPanel } from '@/components/git/ActionsPanel';
+import { SmartActionsPanel } from '@/components/git/SmartActionsPanel';
+import { TaskFeedback } from '@/components/tasks/TaskFeedback';
 import { tasks } from '@/tasks/tasks';
 import { useGitStore } from '@/state/gitStore';
-import { evaluateAssertions } from '@/tasks/assertions';
+import { checkAssertion } from '@/tasks/assertions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -13,59 +14,70 @@ import { toast } from '@/hooks/use-toast';
 export default function TasksPage() {
   const git = useGitStore();
   const [taskIdx, setTaskIdx] = useState(0);
-  const task = tasks[taskIdx];
-  const [hintUsed, setHintUsed] = useState(false);
-  const [explanationShown, setExplanationShown] = useState(false);
-  const [passed, setPassed] = useState(false);
-  const [details, setDetails] = useState<{ text: string; ok: boolean }[]>([]);
+  const [showHint, setShowHint] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const currentTask = tasks[taskIdx];
 
-  useEffect(() => {
-    git.reset(structuredClone(task.initial));
-    setHintUsed(false);
-    setExplanationShown(false);
-    setPassed(false);
-    setDetails([]);
-  }, [taskIdx]);
-
-  useEffect(() => {
-    const res = evaluateAssertions(git.repo, task.target);
-    setPassed(res.allPassed);
-    setDetails(res.details.map((d) => ({ text: JSON.stringify(d.assertion), ok: d.passed })));
-    if (res.allPassed) {
-      const progress = loadProgress();
-      const base = task.maxScore;
-      const score = Math.max(0, base - (hintUsed ? 2 : 0) - (explanationShown ? 5 : 0));
-      progress.solvedTaskIds = Array.from(new Set([...progress.solvedTaskIds, task.id]));
-      progress.scoreByTask[task.id] = Math.max(progress.scoreByTask[task.id] || 0, score);
-      saveProgress(progress);
-      toast({ title: 'Задача сдана', description: `+${score} баллов` });
-    }
-  }, [git.repo]);
+  const isCompleted = useMemo(() => {
+    return currentTask.target.every(assertion => checkAssertion(git.repo, assertion));
+  }, [git.repo, currentTask.target]);
 
   const progress = useMemo(loadProgress, []);
+
+  useEffect(() => {
+    git.reset(structuredClone(currentTask.initial));
+    setShowHint(false);
+    setShowExplanation(false);
+  }, [taskIdx, currentTask.initial]);
+
+  useEffect(() => {
+    if (isCompleted) {
+      const progress = loadProgress();
+      const baseScore = currentTask.maxScore;
+      const penalty = (showHint ? 2 : 0) + (showExplanation ? 5 : 0);
+      const score = Math.max(0, baseScore - penalty);
+      
+      if (!progress.solvedTaskIds.includes(currentTask.id)) {
+        progress.solvedTaskIds.push(currentTask.id);
+        progress.scoreByTask[currentTask.id] = score;
+        saveProgress(progress);
+        toast({ 
+          title: 'Задача выполнена! 🎉', 
+          description: `Получено баллов: ${score}/${baseScore}` 
+        });
+      }
+    }
+  }, [isCompleted, showHint, showExplanation, currentTask]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <main className="container mx-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <aside className="lg:col-span-3 space-y-2">
+        <aside className="lg:col-span-3">
           <Card>
             <CardHeader>
-              <CardTitle>Список задач</CardTitle>
+              <CardTitle>Задачи</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-1">
-                {tasks.map((t, i) => {
-                  const solved = (progress.solvedTaskIds || []).includes(t.id);
+              <div className="space-y-2">
+                {tasks.map((task, i) => {
+                  const isSolved = progress.solvedTaskIds.includes(task.id);
+                  const isCurrent = i === taskIdx;
                   return (
-                    <li key={t.id}>
-                      <Button variant={i===taskIdx? 'default':'secondary'} className="w-full justify-start" onClick={() => setTaskIdx(i)}>
-                        {solved ? '✅' : '🔓'} {t.title}
-                      </Button>
-                    </li>
+                    <Button
+                      key={task.id}
+                      variant={isCurrent ? 'default' : 'ghost'}
+                      className="w-full justify-start"
+                      onClick={() => setTaskIdx(i)}
+                    >
+                      <span className="mr-2">
+                        {isSolved ? '✅' : '🔓'}
+                      </span>
+                      <span className="truncate">{task.title}</span>
+                    </Button>
                   );
                 })}
-              </ul>
+              </div>
             </CardContent>
           </Card>
         </aside>
@@ -73,28 +85,55 @@ export default function TasksPage() {
         <section className="lg:col-span-6">
           <Card>
             <CardHeader>
-              <CardTitle>{task.title}</CardTitle>
+              <CardTitle>{currentTask.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">{task.description}</p>
-              <GitGraph state={git.repo} height={420} />
-              <div className="mt-4 flex items-center gap-3">
-                <Button variant="secondary" onClick={() => git.reset(structuredClone(task.initial))}>Сбросить задачу</Button>
-                <Button variant="outline" onClick={() => { setHintUsed(true); toast({ title: 'Подсказка', description: task.hint }); }}>Подсказка (-2)</Button>
-                <Button variant="outline" onClick={() => { setExplanationShown(true); toast({ title: 'Объяснение', description: task.explanation }); }}>Показать решение (-5)</Button>
-                {passed && <span className="text-green-600">Готово ✅</span>}
+              <div className="mb-4 prose prose-sm max-w-none dark:prose-invert">
+                <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
               </div>
-              <div className="mt-3 text-sm">
-                {details.map((d, idx) => (
-                  <div key={idx} className={d.ok ? 'text-green-600' : 'text-amber-600'}>• {d.text} — {d.ok ? 'ok' : '…'}</div>
-                ))}
+              <GitGraph state={git.repo} height={320} />
+              
+              {/* Task Progress */}
+              <div className="mt-4">
+                <TaskFeedback 
+                  currentState={git.repo}
+                  targetAssertions={currentTask.target}
+                />
               </div>
+
+              <div className="mt-4 flex gap-2">
+                <Button variant="secondary" onClick={() => git.reset(currentTask.initial)}>
+                  Сбросить задачу
+                </Button>
+                <Button variant="outline" onClick={() => setShowHint(!showHint)}>
+                  {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+                </Button>
+                {isCompleted && (
+                  <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)}>
+                    {showExplanation ? 'Скрыть объяснение' : 'Показать объяснение'}
+                  </Button>
+                )}
+              </div>
+              
+              {showHint && (
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+                  <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">💡 Подсказка</div>
+                  {currentTask.hint}
+                </div>
+              )}
+              
+              {showExplanation && (
+                <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+                  <div className="font-medium text-green-800 dark:text-green-200 mb-1">✅ Объяснение</div>
+                  {currentTask.explanation}
+                </div>
+              )}
             </CardContent>
           </Card>
         </section>
 
         <aside className="lg:col-span-3">
-          <ActionsPanel allowedOps={task.allowedOps} />
+          <SmartActionsPanel allowedOps={currentTask.allowedOps} />
         </aside>
       </main>
       <Footer />
@@ -109,6 +148,7 @@ function loadProgress() {
     return { solvedTaskIds: [], scoreByTask: {} as Record<string, number> };
   }
 }
-function saveProgress(p: any) {
-  localStorage.setItem('git-trainer:v1:progress', JSON.stringify(p));
+
+function saveProgress(progress: any) {
+  localStorage.setItem('git-trainer:v1:progress', JSON.stringify(progress));
 }

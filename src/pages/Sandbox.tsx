@@ -1,7 +1,7 @@
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { GitGraph } from '@/components/git/GitGraph';
-import { ActionsPanel } from '@/components/git/ActionsPanel';
+import { SmartActionsPanel } from '@/components/git/SmartActionsPanel';
 import { useEffect } from 'react';
 import { useGitStore } from '@/state/gitStore';
 import { Button } from '@/components/ui/button';
@@ -65,20 +65,7 @@ export default function SandboxPage() {
           </Card>
         </section>
         <aside className="lg:col-span-4">
-          <ActionsPanel />
-          <div className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Подсказки</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Проверь FF: merge возможен без коммита, если tip(target) — предок tip(from).</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => checkFF('main', 'feature')}>FF main←feature?</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <SmartActionsPanel />
         </aside>
       </main>
       <Footer />

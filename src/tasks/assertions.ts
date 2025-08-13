@@ -6,6 +6,10 @@ export interface AssertionResult {
   details: { assertion: Assertion; passed: boolean; note?: string }[];
 }
 
+export function checkAssertion(state: RepoState, assertion: Assertion): boolean {
+  return check(state, assertion);
+}
+
 export function evaluateAssertions(state: RepoState, assertions: Assertion[]): AssertionResult {
   const details: AssertionResult['details'] = assertions.map((a) => ({ assertion: a, passed: check(state, a) }));
   return { allPassed: details.every((d) => d.passed), details };
