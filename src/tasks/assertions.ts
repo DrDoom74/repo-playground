@@ -57,6 +57,31 @@ function check(state: RepoState, a: Assertion): boolean {
       return a.exists ? !!state.branches[a.branch] : !state.branches[a.branch];
     case 'EITHER':
       return a.anyOf.some((x) => check(state, x));
+    
+    case 'HEAD_IS_DETACHED':
+      return state.head.type === 'detached';
+    
+    case 'COMMIT_MESSAGE_CONTAINS':
+      const commit = state.commits[a.commit];
+      return commit ? commit.message.includes(a.text) : false;
+    
+    case 'NO_MERGE_COMMITS_ON_BRANCH':
+      const tip = getBranchTip(state, a.branch);
+      if (!tip) return false;
+      const tipCommit = state.commits[tip];
+      return tipCommit ? tipCommit.parents.length <= 1 : false;
+    
+    case 'BRANCH_REBASED_ONTO':
+      // Check if branch was rebased onto target by looking for linear history
+      // and that the base is reachable from the onto branch
+      const branchTip = getBranchTip(state, a.branch);
+      const ontoTip = getBranchTip(state, a.onto);
+      if (!branchTip || !ontoTip) return false;
+      
+      // Check if it's linear from branch tip to onto tip
+      return isLinearHistory(state, a.branch) && 
+             isAncestor(state.commits, ontoTip, branchTip);
+    
     default:
       return false;
   }

@@ -105,6 +105,18 @@ function getAssertionDescription(assertion: Assertion): string {
     case 'EITHER':
       return `Должно выполняться одно из условий (${assertion.anyOf.length} вариантов)`;
     
+    case 'HEAD_IS_DETACHED':
+      return 'HEAD должен быть в detached состоянии';
+    
+    case 'COMMIT_MESSAGE_CONTAINS':
+      return `Коммит ${assertion.commit} должен содержать "${assertion.text}" в сообщении`;
+    
+    case 'NO_MERGE_COMMITS_ON_BRANCH':
+      return `Ветка ${assertion.branch} не должна содержать merge-коммитов`;
+    
+    case 'BRANCH_REBASED_ONTO':
+      return `Ветка ${assertion.branch} должна быть перебазирована на ${assertion.onto}`;
+    
     default:
       return 'Неизвестное условие';
   }

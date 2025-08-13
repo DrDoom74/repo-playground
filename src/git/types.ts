@@ -46,7 +46,11 @@ export type Assertion =
   | { type: 'HEAD_AT_COMMIT'; commit: CommitID }
   | { type: 'COMMIT_COUNT_ON_BRANCH'; branch: string; gte?: number; eq?: number }
   | { type: 'BRANCH_EXISTS'; branch: string; exists: boolean }
-  | { type: 'EITHER'; anyOf: Assertion[] };
+  | { type: 'EITHER'; anyOf: Assertion[] }
+  | { type: 'HEAD_IS_DETACHED' }
+  | { type: 'COMMIT_MESSAGE_CONTAINS'; commit: CommitID; text: string }
+  | { type: 'NO_MERGE_COMMITS_ON_BRANCH'; branch: string }
+  | { type: 'BRANCH_REBASED_ONTO'; branch: string; onto: string };
 
 export interface Task {
   id: string;
