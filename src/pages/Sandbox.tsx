@@ -18,30 +18,6 @@ export default function SandboxPage() {
     });
   }, []);
 
-  const checkFF = (a: string, b: string) => {
-    const A = git.repo.branches[a]?.tip;
-    const B = git.repo.branches[b]?.tip;
-    if (!A || !B) return toast({ title: 'Укажите существующие ветки' });
-    const isFF = isAncestor(git.repo.commits as any, A, B);
-    toast({ title: 'FF-проверка', description: isFF ? `${a} -> ${b} возможен FF` : 'FF невозможен' });
-  };
-
-  const isAncestor = (commits: any, ancestor: string, descendant: string): boolean => {
-    if (ancestor === descendant) return true;
-    const visited = new Set<string>();
-    const stack = [descendant];
-    while (stack.length) {
-      const id = stack.pop()!;
-      if (visited.has(id)) continue;
-      visited.add(id);
-      const parents = commits[id]?.parents || [];
-      for (const p of parents) {
-        if (p === ancestor) return true;
-        stack.push(p);
-      }
-    }
-    return false;
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">

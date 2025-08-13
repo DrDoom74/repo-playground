@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { RepoState } from '@/git/types';
-import { GitGraphSVG } from './GitGraphSVG';
+import { GitGraphVertical } from './GitGraphVertical';
 
 interface GitGraphProps {
   state: RepoState;
@@ -9,10 +9,10 @@ interface GitGraphProps {
 
 export const GitGraph = memo(({ state, height = 420 }: GitGraphProps) => {
   return (
-    <GitGraphSVG 
+    <GitGraphVertical 
       state={state} 
       height={typeof height === 'number' ? height : parseInt(String(height)) || 420}
-      width={800}
+      width={600}
     />
   );
 });

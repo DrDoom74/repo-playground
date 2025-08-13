@@ -136,30 +136,66 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
       log(get(), 'error', `Branch not found: ${ontoBranch}`);
       return;
     }
-    const lca = computeLCA(repo.commits, curTip, ontoTip);
-    if (!lca) {
-      log(get(), 'error', 'No common ancestor');
+    
+    // Check if already up-to-date
+    if (isAncestor(repo.commits, ontoTip, curTip)) {
+      log(get(), 'info', `${curBranch} is already up-to-date with ${ontoBranch}`);
       return;
     }
-    // collect chain from curTip back to (but excluding) lca along first-parent
-    const chain: string[] = [];
-    let cursor = curTip;
-    while (cursor && cursor !== lca) {
-      chain.unshift(cursor);
-      const parents = repo.commits[cursor]?.parents || [];
-      cursor = parents[0];
-      if (!cursor) break;
+    
+    const lca = computeLCA(repo.commits, curTip, ontoTip);
+    if (!lca) {
+      log(get(), 'error', 'No common ancestor found');
+      return;
     }
-    let base = ontoTip;
-    for (const oldId of chain) {
-      const old = repo.commits[oldId];
+    
+    if (lca === curTip) {
+      // Fast-forward case
+      repo.branches[curBranch].tip = ontoTip;
+      set({ repo });
+      log(get(), 'rebase', `fast-forward ${curBranch} to ${ontoBranch}`);
+      return;
+    }
+    
+    // Collect commits to replay: from curTip back to (but excluding) lca
+    const toReplay: string[] = [];
+    const visited = new Set<string>();
+    
+    function collectCommits(commitId: string, stopAt: string) {
+      if (visited.has(commitId) || commitId === stopAt) return;
+      visited.add(commitId);
+      
+      const commit = repo.commits[commitId];
+      if (!commit) return;
+      
+      toReplay.unshift(commitId); // Add to front for correct order
+      
+      // Follow first parent (main line of development)
+      if (commit.parents.length > 0) {
+        collectCommits(commit.parents[0], stopAt);
+      }
+    }
+    
+    collectCommits(curTip, lca);
+    
+    // Replay commits on new base
+    let newBase = ontoTip;
+    for (const oldCommitId of toReplay) {
+      const oldCommit = repo.commits[oldCommitId];
+      if (!oldCommit) continue;
+      
       const newId = genNewId('R');
-      repo.commits[newId] = { id: newId, parents: [base], message: old.message };
-      base = newId;
+      repo.commits[newId] = { 
+        id: newId, 
+        parents: [newBase], 
+        message: oldCommit.message 
+      };
+      newBase = newId;
     }
-    repo.branches[curBranch].tip = base;
+    
+    repo.branches[curBranch].tip = newBase;
     set({ repo });
-    log(get(), 'rebase', `rebase ${curBranch} onto ${ontoBranch}`);
+    log(get(), 'rebase', `rebased ${curBranch} onto ${ontoBranch} (${toReplay.length} commits)`);
   },
 
   resetHard: (toCommit: string) => {

@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGitStore } from '@/state/gitStore';
-import { GitBranch, GitCommit, GitMerge, RotateCcw, Cherry, Terminal } from 'lucide-react';
+import { GitBranch, GitCommit, GitMerge, RotateCcw, Cherry, Terminal, AlertCircle } from 'lucide-react';
+import { validateCommand } from './CommandValidator';
 
 interface SmartActionsPanelProps {
   allowedOps?: string[];
@@ -78,6 +79,16 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
   const executeCommand = (command: string = cmd) => {
     if (!command.trim()) return;
     
+    const validation = validateCommand(command.trim(), git.repo);
+    if (!validation.valid) {
+      git.logs.unshift({ 
+        ts: Date.now(), 
+        op: 'error', 
+        message: validation.error || 'Ошибка валидации' 
+      });
+      return;
+    }
+    
     try {
       parseAndRun(command.trim(), git);
       setCmd('');
@@ -86,6 +97,11 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
       console.error('Command failed:', error);
     }
   };
+
+  const currentValidation = useMemo(() => {
+    if (!cmd.trim()) return null;
+    return validateCommand(cmd.trim(), git.repo);
+  }, [cmd, git.repo]);
 
   const filteredSuggestions = suggestions.filter(s => 
     !cmd || s.command.toLowerCase().includes(cmd.toLowerCase()) || 
@@ -140,25 +156,45 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                value={cmd}
-                onChange={(e) => {
-                  setCmd(e.target.value);
-                  setShowSuggestions(e.target.value.length > 0);
-                }}
-                placeholder="git checkout main"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    executeCommand();
-                  } else if (e.key === 'Escape') {
-                    setShowSuggestions(false);
-                  }
-                }}
-                onFocus={() => setShowSuggestions(cmd.length > 0)}
-                className="font-mono"
-              />
-              <Button onClick={() => executeCommand()}>Выполнить</Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={cmd}
+                  onChange={(e) => {
+                    setCmd(e.target.value);
+                    setShowSuggestions(e.target.value.length > 0);
+                  }}
+                  placeholder="git checkout main"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      executeCommand();
+                    } else if (e.key === 'Escape') {
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  onFocus={() => setShowSuggestions(cmd.length > 0)}
+                  className={`font-mono ${currentValidation && !currentValidation.valid ? 'border-destructive' : ''}`}
+                />
+                <Button 
+                  onClick={() => executeCommand()}
+                  disabled={currentValidation && !currentValidation.valid}
+                >
+                  Выполнить
+                </Button>
+              </div>
+              
+              {/* Validation feedback */}
+              {currentValidation && !currentValidation.valid && (
+                <div className="flex items-start gap-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                  <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <div className="text-destructive font-medium">{currentValidation.error}</div>
+                    {currentValidation.suggestion && (
+                      <div className="text-muted-foreground mt-1">{currentValidation.suggestion}</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Command suggestions */}
