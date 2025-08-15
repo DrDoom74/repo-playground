@@ -27,10 +27,14 @@ interface LayoutPath {
   curved?: boolean;
 }
 
+// Layout constants with improved spacing
 const COMMIT_RADIUS = 6;
 const COMMIT_SPACING_Y = 80;
-const LANE_WIDTH = 40;
+const LANE_WIDTH = 50; // Increased for better separation
 const PADDING = 60;
+const HEAD_ZONE_WIDTH = 60; // Dedicated space for HEAD
+const TEXT_ZONE_WIDTH = 250; // Dedicated space for text
+const BRANCH_LABEL_OFFSET = 8;
 
 const BRANCH_COLORS = [
   'hsl(var(--primary))',
@@ -42,12 +46,12 @@ const BRANCH_COLORS = [
 ];
 
 export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitGraphVerticalProps) => {
-  const { commits: layoutCommits, paths, dimensions } = useMemo(() => {
-    return computeVerticalLayout(state);
-  }, [state]);
+  const { commits: layoutCommits, paths, dimensions, centerOffset } = useMemo(() => {
+    return computeVerticalLayout(state, width);
+  }, [state, width]);
 
-  const actualWidth = Math.max(width, dimensions.width + PADDING * 2);
-  const actualHeight = Math.max(height, dimensions.height + PADDING * 2);
+  const actualWidth = Math.max(width, dimensions.width);
+  const actualHeight = Math.max(height, dimensions.height);
 
   return (
     <div className="bg-card border border-border rounded-lg overflow-auto">
@@ -117,11 +121,11 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
               {commit.message.length > 30 ? commit.message.slice(0, 30) + '...' : commit.message}
             </text>
             
-            {/* HEAD indicator with background */}
+            {/* HEAD indicator in dedicated zone */}
             {commit.isHead && (
               <g>
                 <rect
-                  x={commit.x - 55}
+                  x={HEAD_ZONE_WIDTH / 2 - 20}
                   y={commit.y - 8}
                   width="40"
                   height="16"
@@ -132,21 +136,22 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
                   fillOpacity="0.95"
                 />
                 <text
-                  x={commit.x - 35}
+                  x={HEAD_ZONE_WIDTH / 2}
                   y={commit.y + 4}
-                  className="text-xs font-bold fill-primary"
+                  className="text-xs font-bold fill-primary text-anchor-middle"
+                  textAnchor="middle"
                 >
                   HEAD
                 </text>
               </g>
             )}
             
-            {/* Branch labels */}
+            {/* Branch labels in dedicated zone */}
             {commit.branchLabels.map((branch, i) => (
               <g key={branch}>
                 <rect
-                  x={commit.x + COMMIT_RADIUS + 8}
-                  y={commit.y + 35 + i * 18}
+                  x={commit.x + TEXT_ZONE_WIDTH + BRANCH_LABEL_OFFSET}
+                  y={commit.y - 8 + i * 20}
                   width={branch.length * 6 + 12}
                   height="16"
                   rx="8"
@@ -155,8 +160,8 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
                   fillOpacity="0.9"
                 />
                 <text
-                  x={commit.x + COMMIT_RADIUS + 14}
-                  y={commit.y + 47 + i * 18}
+                  x={commit.x + TEXT_ZONE_WIDTH + BRANCH_LABEL_OFFSET + 6}
+                  y={commit.y + 4 + i * 20}
                   className="text-xs fill-secondary-foreground font-medium"
                 >
                   {branch}
@@ -182,7 +187,7 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
   );
 });
 
-function computeVerticalLayout(state: RepoState) {
+function computeVerticalLayout(state: RepoState, containerWidth: number = 400) {
   const commits = Object.values(state.commits);
   const branches = Object.values(state.branches);
   
@@ -247,30 +252,24 @@ function computeVerticalLayout(state: RepoState) {
     }
     
     commitLanes.set(commit.id, lane);
-    const x = PADDING + lane * LANE_WIDTH;
     
     const isHead = commit.id === headCommitId;
     const branchLabels = branches
       .filter(b => b.tip === commit.id)
       .map(b => b.name);
     
-    const layoutCommit: LayoutCommit = {
-      id: commit.id,
-      x,
-      y,
-      color,
-      isHead,
-      branchLabels,
-      message: commit.message,
-      parents: commit.parents,
-      lane,
-    };
+    // This section was moved to the main layout creation below
   });
   
-  // Create layout objects
+  // Calculate graph dimensions first to enable centering
+  const maxLane = Math.max(...Array.from(commitLanes.values()), 0);
+  const graphWidth = HEAD_ZONE_WIDTH + (maxLane + 1) * LANE_WIDTH + TEXT_ZONE_WIDTH + 100;
+  const centerOffset = Math.max(0, (containerWidth - graphWidth) / 2);
+  
+  // Create layout objects with centering
   const layoutCommits: LayoutCommit[] = sorted.map((commit, index) => {
     const lane = commitLanes.get(commit.id) || 0;
-    const x = PADDING + lane * LANE_WIDTH;
+    const x = centerOffset + HEAD_ZONE_WIDTH + lane * LANE_WIDTH;
     const y = PADDING + index * COMMIT_SPACING_Y;
     const isHead = commit.id === headCommitId;
     const branchLabels = branches
@@ -310,16 +309,17 @@ function computeVerticalLayout(state: RepoState) {
     });
   });
   
-  // Calculate dimensions
-  const maxX = Math.max(...layoutCommits.map(c => c.x), PADDING);
+  // Calculate final dimensions
   const maxY = Math.max(...layoutCommits.map(c => c.y), PADDING);
+  const totalWidth = Math.max(containerWidth, graphWidth + PADDING * 2);
   
   return {
     commits: layoutCommits,
     paths,
+    centerOffset,
     dimensions: {
-      width: maxX + LANE_WIDTH + 200, // Extra space for text
-      height: maxY + COMMIT_SPACING_Y,
+      width: totalWidth,
+      height: maxY + COMMIT_SPACING_Y + PADDING,
     },
   };
 }
