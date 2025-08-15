@@ -94,7 +94,11 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
       setCmd('');
       setShowSuggestions(false);
     } catch (error) {
-      console.error('Command failed:', error);
+      git.logs.unshift({ 
+        ts: Date.now(), 
+        op: 'error', 
+        message: error instanceof Error ? error.message : 'Ошибка выполнения команды'
+      });
     }
   };
 

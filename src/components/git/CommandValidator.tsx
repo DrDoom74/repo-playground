@@ -133,6 +133,14 @@ function validateMerge(parts: string[], repo: RepoState): ValidationResult {
     return { valid: false, error: 'Нельзя слить ветку саму в себя' };
   }
   
+  // Check if the branch is already merged
+  const sourceCommit = repo.branches[sourceBranch].tip;
+  const targetCommit = repo.branches[repo.head.ref].tip;
+  
+  if (sourceCommit === targetCommit) {
+    return { valid: false, error: `Ветка "${sourceBranch}" уже слита в "${repo.head.ref}"` };
+  }
+  
   return { valid: true };
 }
 

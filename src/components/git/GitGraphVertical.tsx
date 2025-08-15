@@ -28,9 +28,9 @@ interface LayoutPath {
 }
 
 const COMMIT_RADIUS = 6;
-const COMMIT_SPACING_Y = 60;
+const COMMIT_SPACING_Y = 80;
 const LANE_WIDTH = 40;
-const PADDING = 40;
+const PADDING = 60;
 
 const BRANCH_COLORS = [
   'hsl(var(--primary))',
@@ -121,18 +121,20 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
             {commit.isHead && (
               <g>
                 <rect
-                  x={commit.x - 45}
+                  x={commit.x - 55}
                   y={commit.y - 8}
                   width="40"
                   height="16"
                   rx="8"
-                  fill="hsl(var(--primary))"
-                  stroke="hsl(var(--border))"
+                  fill="hsl(var(--background))"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="2"
+                  fillOpacity="0.95"
                 />
                 <text
-                  x={commit.x - 25}
+                  x={commit.x - 35}
                   y={commit.y + 4}
-                  className="text-xs font-bold fill-primary-foreground"
+                  className="text-xs font-bold fill-primary"
                 >
                   HEAD
                 </text>
@@ -144,16 +146,17 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
               <g key={branch}>
                 <rect
                   x={commit.x + COMMIT_RADIUS + 8}
-                  y={commit.y + 30 + i * 18}
+                  y={commit.y + 35 + i * 18}
                   width={branch.length * 6 + 12}
                   height="16"
                   rx="8"
                   fill="hsl(var(--secondary))"
                   stroke="hsl(var(--border))"
+                  fillOpacity="0.9"
                 />
                 <text
                   x={commit.x + COMMIT_RADIUS + 14}
-                  y={commit.y + 42 + i * 18}
+                  y={commit.y + 47 + i * 18}
                   className="text-xs fill-secondary-foreground font-medium"
                 >
                   {branch}
