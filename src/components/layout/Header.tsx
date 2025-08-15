@@ -5,6 +5,8 @@ import { toast } from '@/hooks/use-toast';
 export default function Header() {
   const resetProgress = () => {
     localStorage.removeItem('git-trainer:v1:progress');
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('progress-reset'));
     toast({ title: 'Прогресс сброшен' });
   };
 

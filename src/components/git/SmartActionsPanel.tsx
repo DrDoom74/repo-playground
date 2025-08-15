@@ -139,17 +139,17 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
             
             {/* Smart suggestions */}
             {filteredSuggestions.slice(0, 4).map((suggestion, i) => (
-              <Button
+                <Button
                 key={i}
                 variant="outline"
-                className="justify-start text-left h-auto p-3"
+                className="justify-start text-left h-auto p-3 min-w-0"
                 onClick={() => runCommand(suggestion.command)}
                 disabled={!can(getOperationFromCommand(suggestion.command))}
               >
                 <suggestion.icon className="w-4 h-4 mr-2 flex-shrink-0" />
-                <div>
-                  <div className="font-medium">{suggestion.label}</div>
-                  <div className="text-xs text-muted-foreground">{suggestion.description}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{suggestion.label}</div>
+                  <div className="text-xs text-muted-foreground break-words">{suggestion.description}</div>
                 </div>
               </Button>
             ))}

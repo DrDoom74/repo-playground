@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { GitGraph } from '@/components/git/GitGraph';
@@ -10,44 +10,51 @@ import { checkAssertion } from '@/tasks/assertions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useProgress } from '@/hooks/useProgress';
 
 export default function TasksPage() {
   const git = useGitStore();
   const [taskIdx, setTaskIdx] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [hasCompletedOnLoad, setHasCompletedOnLoad] = useState(false);
   const currentTask = tasks[taskIdx];
+  const { progress, updateProgress } = useProgress();
 
   const isCompleted = useMemo(() => {
     return currentTask.target.every(assertion => checkAssertion(git.repo, assertion));
   }, [git.repo, currentTask.target]);
 
-  const progress = useMemo(loadProgress, []);
-
   useEffect(() => {
     git.reset(structuredClone(currentTask.initial));
     setShowHint(false);
     setShowExplanation(false);
+    // Check if task is already completed on load to prevent auto-completion
+    const isCompletedOnLoad = currentTask.target.every(assertion => checkAssertion(git.repo, assertion));
+    setHasCompletedOnLoad(isCompletedOnLoad);
   }, [taskIdx, currentTask.initial]);
 
   useEffect(() => {
-    if (isCompleted) {
-      const progress = loadProgress();
+    // Only mark as completed if it wasn't completed on initial load
+    if (isCompleted && !hasCompletedOnLoad) {
       const baseScore = currentTask.maxScore;
       const penalty = (showHint ? 2 : 0) + (showExplanation ? 5 : 0);
       const score = Math.max(0, baseScore - penalty);
       
       if (!progress.solvedTaskIds.includes(currentTask.id)) {
-        progress.solvedTaskIds.push(currentTask.id);
-        progress.scoreByTask[currentTask.id] = score;
-        saveProgress(progress);
+        const newProgress = {
+          ...progress,
+          solvedTaskIds: [...progress.solvedTaskIds, currentTask.id],
+          scoreByTask: { ...progress.scoreByTask, [currentTask.id]: score }
+        };
+        updateProgress(newProgress);
         toast({ 
           title: 'Задача выполнена! 🎉', 
           description: `Получено баллов: ${score}/${baseScore}` 
         });
       }
     }
-  }, [isCompleted, showHint, showExplanation, currentTask]);
+  }, [isCompleted, hasCompletedOnLoad, showHint, showExplanation, currentTask, progress, updateProgress]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -223,14 +230,4 @@ export default function TasksPage() {
   );
 }
 
-function loadProgress() {
-  try {
-    return JSON.parse(localStorage.getItem('git-trainer:v1:progress') || '{"solvedTaskIds":[],"scoreByTask":{}}');
-  } catch {
-    return { solvedTaskIds: [], scoreByTask: {} as Record<string, number> };
-  }
-}
-
-function saveProgress(progress: any) {
-  localStorage.setItem('git-trainer:v1:progress', JSON.stringify(progress));
-}
+// These functions are now handled by useProgress hook

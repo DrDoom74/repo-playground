@@ -33,8 +33,8 @@ const COMMIT_SPACING_Y = 80;
 const LANE_WIDTH = 50; // Increased for better separation
 const PADDING = 60;
 const HEAD_ZONE_WIDTH = 60; // Dedicated space for HEAD
-const TEXT_ZONE_WIDTH = 250; // Dedicated space for text
-const BRANCH_LABEL_OFFSET = 8;
+const TEXT_ZONE_WIDTH = 120; // Reduced space for text
+const BRANCH_LABEL_OFFSET = 20;
 
 const BRANCH_COLORS = [
   'hsl(var(--primary))',
@@ -146,11 +146,11 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
               </g>
             )}
             
-            {/* Branch labels in dedicated zone */}
+            {/* Branch labels positioned closer to graph */}
             {commit.branchLabels.map((branch, i) => (
               <g key={branch}>
                 <rect
-                  x={commit.x + TEXT_ZONE_WIDTH + BRANCH_LABEL_OFFSET}
+                  x={commit.x + COMMIT_RADIUS * 2 + 30}
                   y={commit.y - 8 + i * 20}
                   width={branch.length * 6 + 12}
                   height="16"
@@ -160,7 +160,7 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
                   fillOpacity="0.9"
                 />
                 <text
-                  x={commit.x + TEXT_ZONE_WIDTH + BRANCH_LABEL_OFFSET + 6}
+                  x={commit.x + COMMIT_RADIUS * 2 + 30 + 6}
                   y={commit.y + 4 + i * 20}
                   className="text-xs fill-secondary-foreground font-medium"
                 >
@@ -263,7 +263,7 @@ function computeVerticalLayout(state: RepoState, containerWidth: number = 400) {
   
   // Calculate graph dimensions first to enable centering
   const maxLane = Math.max(...Array.from(commitLanes.values()), 0);
-  const graphWidth = HEAD_ZONE_WIDTH + (maxLane + 1) * LANE_WIDTH + TEXT_ZONE_WIDTH + 100;
+  const graphWidth = HEAD_ZONE_WIDTH + (maxLane + 1) * LANE_WIDTH + 150; // Space for commit text and branch labels
   const centerOffset = Math.max(0, (containerWidth - graphWidth) / 2);
   
   // Create layout objects with centering
