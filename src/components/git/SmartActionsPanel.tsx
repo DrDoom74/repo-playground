@@ -152,8 +152,8 @@ export const SmartActionsPanel = ({ allowedOps, avoidCommands, undoDisabled }: S
                 >
                   <suggestion.icon className="w-4 h-4 mr-2 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium truncate">{suggestion.label}</div>
-                    <div className="text-xs text-muted-foreground break-words">{suggestion.description}</div>
+                    <div className="font-medium whitespace-normal">{suggestion.label}</div>
+                    <div className="text-xs text-muted-foreground whitespace-normal">{suggestion.description}</div>
                   </div>
                 </Button>
               ))

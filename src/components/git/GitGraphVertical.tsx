@@ -78,9 +78,9 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
                 strokeLinecap="round"
               />
             ) : (
-              // Orthogonal path: vertical down, horizontal, vertical down
+              // Orthogonal path: vertical up, horizontal, vertical up (for bottom-up layout)
               <path
-                d={`M ${path.from.x},${path.from.y} V ${(path.from.y + path.to.y) / 2} H ${path.to.x} V ${path.to.y}`}
+                d={`M ${path.from.x},${path.from.y} V ${Math.min(path.from.y, path.to.y) - 10} H ${path.to.x} V ${path.to.y}`}
                 stroke={path.color}
                 strokeWidth="2"
                 fill="none"
@@ -182,7 +182,7 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
           y={30}
           className="text-xs fill-muted-foreground font-mono"
         >
-          * commit graph (newest first)
+          * commit graph (oldest ↓ to newest ↑)
         </text>
       </svg>
     </div>
@@ -221,8 +221,9 @@ function computeVerticalLayout(state: RepoState, containerWidth: number = 400) {
     branchColors.set(branch.name, BRANCH_COLORS[i % BRANCH_COLORS.length]);
   });
   
-  // Process commits from newest to oldest
-  sorted.forEach((commit, index) => {
+  // Process commits from oldest to newest (for bottom-up layout)
+  const reversedSorted = [...sorted].reverse(); // Reverse to have oldest first
+  reversedSorted.forEach((commit, index) => {
     const y = PADDING + index * COMMIT_SPACING_Y;
     
     // Determine which branch this commit belongs to
@@ -268,8 +269,8 @@ function computeVerticalLayout(state: RepoState, containerWidth: number = 400) {
   const graphWidth = HEAD_ZONE_WIDTH + (maxLane + 1) * LANE_WIDTH + 150; // Space for commit text and branch labels
   const centerOffset = Math.max(0, (containerWidth - graphWidth) / 2);
   
-  // Create layout objects with centering
-  const layoutCommits: LayoutCommit[] = sorted.map((commit, index) => {
+  // Create layout objects with centering (bottom-up: oldest at bottom)
+  const layoutCommits: LayoutCommit[] = reversedSorted.map((commit, index) => {
     const lane = commitLanes.get(commit.id) || 0;
     const x = centerOffset + HEAD_ZONE_WIDTH + lane * LANE_WIDTH;
     const y = PADDING + index * COMMIT_SPACING_Y;
