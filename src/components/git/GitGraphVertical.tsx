@@ -24,7 +24,6 @@ interface LayoutPath {
   from: { x: number; y: number };
   to: { x: number; y: number };
   color: string;
-  curved?: boolean;
 }
 
 // Layout constants with improved spacing
@@ -64,18 +63,11 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
         {/* Background */}
         <rect width="100%" height="100%" fill="hsl(var(--card))" />
         
-        {/* Connection paths */}
+        {/* Connection paths - strictly vertical/horizontal */}
         {paths.map((path, i) => (
           <g key={i}>
-            {path.curved ? (
-              <path
-                d={`M ${path.from.x},${path.from.y} Q ${(path.from.x + path.to.x) / 2},${path.from.y + 20} ${path.to.x},${path.to.y}`}
-                stroke={path.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-              />
-            ) : (
+            {path.from.x === path.to.x ? (
+              // Straight vertical line
               <line
                 x1={path.from.x}
                 y1={path.from.y}
@@ -84,6 +76,16 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 400 }: GitG
                 stroke={path.color}
                 strokeWidth="2"
                 strokeLinecap="round"
+              />
+            ) : (
+              // Orthogonal path: vertical down, horizontal, vertical down
+              <path
+                d={`M ${path.from.x},${path.from.y} V ${(path.from.y + path.to.y) / 2} H ${path.to.x} V ${path.to.y}`}
+                stroke={path.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
             )}
           </g>
@@ -292,18 +294,16 @@ function computeVerticalLayout(state: RepoState, containerWidth: number = 400) {
     };
   });
   
-  // Create connection paths
+  // Create connection paths - all orthogonal (no curves)
   const paths: LayoutPath[] = [];
   layoutCommits.forEach(commit => {
     commit.parents.forEach(parentId => {
       const parentCommit = layoutCommits.find(c => c.id === parentId);
       if (parentCommit) {
-        const curved = commit.lane !== parentCommit.lane;
         paths.push({
           from: { x: commit.x, y: commit.y },
           to: { x: parentCommit.x, y: parentCommit.y },
           color: commit.color,
-          curved,
         });
       }
     });

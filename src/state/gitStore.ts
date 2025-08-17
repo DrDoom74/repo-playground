@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { RepoState, Head, Commit, ActionLogItem } from '@/git/types';
-import { computeLCA, genNewId, getHeadCommitId, isAncestor } from '@/git/utils';
+import { computeLCA, genNewId, getHeadCommitId, isAncestor, resetIdCounter } from '@/git/utils';
 
 interface GitStoreState {
   repo: RepoState;
@@ -45,7 +45,10 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
   logs: [],
   history: [],
   setRepo: (repo) => set({ repo }),
-  reset: (repo) => set({ repo, logs: [], history: [] }),
+  reset: (repo) => {
+    resetIdCounter();
+    set({ repo, logs: [], history: [] });
+  },
 
   undo: () => {
     const state = get();

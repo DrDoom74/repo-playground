@@ -118,3 +118,7 @@ export function genNewId(base: string = 'X'): string {
   idCounter += 1;
   return `${base}${idCounter}`;
 }
+
+export function resetIdCounter(): void {
+  idCounter = 0;
+}
