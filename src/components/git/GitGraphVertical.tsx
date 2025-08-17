@@ -29,7 +29,8 @@ const COMMIT_SPACING_Y = 60;
 const LANE_WIDTH = 50;
 const PADDING = 40;
 const HEAD_ZONE_WIDTH = 80;
-const MESSAGE_ZONE_WIDTH = 160;
+const HEAD_LABEL_WIDTH = 40;
+const MESSAGE_ZONE_WIDTH = 200;
 
 const BRANCH_COLORS = [
   'hsl(var(--primary))',
@@ -62,6 +63,15 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
           fill="hsl(var(--card))"
         />
         
+        {/* Legend - always at top */}
+        <text
+          x={10}
+          y={20}
+          className="text-xs fill-muted-foreground font-mono"
+        >
+          * Git graph: oldest ↓ to newest ↑
+        </text>
+        
         <g transform={`translate(0, ${verticalOffset})`}>
         {/* Connection paths - strictly orthogonal */}
         {layout.paths.map((path, index) => (
@@ -91,9 +101,44 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
           </g>
         ))}
 
-        {/* Commit circles and labels */}
+        {/* Branch labels - render first for z-order */}
         {layout.commits.map((commit) => (
-          <g key={commit.id}>
+          commit.branches.map((branch, branchIndex) => {
+            const labelWidth = Math.max(50, branch.length * 8 + 16);
+            let labelX = commit.x + 50;
+            // Calculate cumulative offset for multiple branches
+            for (let i = 0; i < branchIndex; i++) {
+              labelX += Math.max(50, commit.branches[i].length * 8 + 16) + 10;
+            }
+            return (
+              <g key={`${commit.id}-${branch}-label`}>
+                <rect
+                  x={labelX}
+                  y={commit.y - 8}
+                  width={labelWidth}
+                  height={16}
+                  rx="8"
+                  fill="hsl(var(--secondary))"
+                  stroke="hsl(var(--border))"
+                  strokeWidth="1"
+                  className="drop-shadow-sm"
+                />
+                <text
+                  x={labelX + labelWidth / 2}
+                  y={commit.y + 1}
+                  textAnchor="middle"
+                  className="text-xs fill-secondary-foreground font-medium pointer-events-none"
+                >
+                  {branch}
+                </text>
+              </g>
+            );
+          })
+        ))}
+
+        {/* Commit circles and IDs - render on top */}
+        {layout.commits.map((commit) => (
+          <g key={`${commit.id}-commit`}>
             {/* Commit circle */}
             <circle
               cx={commit.x}
@@ -105,87 +150,66 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
               className="drop-shadow-sm"
             />
             
-            {/* Commit ID */}
+            {/* Commit ID - with high contrast */}
             <text
               x={commit.x}
               y={commit.y + 1}
               textAnchor="middle"
-              className="text-xs fill-card-foreground font-mono font-bold pointer-events-none"
+              className="text-xs fill-background font-mono font-bold pointer-events-none"
+              stroke="hsl(var(--foreground))"
+              strokeWidth="0.5"
+              paintOrder="stroke fill"
             >
               {commit.id}
             </text>
-            
-            {/* Commit message */}
+          </g>
+        ))}
+        
+        {/* HEAD indicator - render on left side */}
+        {layout.commits.map((commit) => 
+          commit.isHead && (
+            <g key={`${commit.id}-head`}>
+              <rect
+                x={commit.x - HEAD_LABEL_WIDTH - 12}
+                y={commit.y - 8}
+                width={HEAD_LABEL_WIDTH}
+                height={16}
+                rx="3"
+                fill="hsl(var(--primary))"
+                className="drop-shadow-sm"
+              />
+              <text
+                x={commit.x - HEAD_LABEL_WIDTH/2 - 12}
+                y={commit.y + 1}
+                textAnchor="middle"
+                className="text-xs fill-primary-foreground font-bold pointer-events-none"
+              >
+                HEAD
+              </text>
+            </g>
+          )
+        )}
+        
+        {/* Commit messages - render after all labels */}
+        {layout.commits.map((commit) => {
+          // Calculate message position after all branch labels
+          let messageX = commit.x + 50;
+          commit.branches.forEach(branch => {
+            messageX += Math.max(50, branch.length * 8 + 16) + 10;
+          });
+          messageX = Math.max(messageX + 12, commit.x + MESSAGE_ZONE_WIDTH);
+          
+          return (
             <text
-              x={commit.x + HEAD_ZONE_WIDTH + MESSAGE_ZONE_WIDTH}
+              key={`${commit.id}-message`}
+              x={messageX}
               y={commit.y + 1}
               className="text-sm fill-foreground font-mono pointer-events-none"
             >
               {commit.message}
             </text>
-            
-            {/* HEAD indicator */}
-            {commit.isHead && (
-              <g>
-                <rect
-                  x={commit.x + 15}
-                  y={commit.y - 8}
-                  width={30}
-                  height={16}
-                  rx="3"
-                  fill="hsl(var(--primary))"
-                  className="drop-shadow-sm"
-                />
-                <text
-                  x={commit.x + 30}
-                  y={commit.y + 1}
-                  textAnchor="middle"
-                  className="text-xs fill-primary-foreground font-bold pointer-events-none"
-                >
-                  HEAD
-                </text>
-              </g>
-            )}
-            
-            {/* Branch labels */}
-            {commit.branches.map((branch, branchIndex) => {
-              const labelWidth = Math.max(50, branch.length * 8 + 16);
-              const labelX = commit.x + 50 + (branchIndex * (labelWidth + 10));
-              return (
-                <g key={`${commit.id}-${branch}`}>
-                  <rect
-                    x={labelX}
-                    y={commit.y - 8}
-                    width={labelWidth}
-                    height={16}
-                    rx="8"
-                    fill="hsl(var(--secondary))"
-                    stroke="hsl(var(--border))"
-                    strokeWidth="1"
-                    className="drop-shadow-sm"
-                  />
-                  <text
-                    x={labelX + labelWidth / 2}
-                    y={commit.y + 1}
-                    textAnchor="middle"
-                    className="text-xs fill-secondary-foreground font-medium pointer-events-none"
-                  >
-                    {branch}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        ))}
-        
-        {/* Legend */}
-        <text
-          x={10}
-          y={30}
-          className="text-xs fill-muted-foreground font-mono"
-        >
-          * Git graph: oldest ↓ to newest ↑
-        </text>
+          );
+        })}
         </g>
       </svg>
     </div>
