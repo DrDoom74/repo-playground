@@ -4,15 +4,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGitStore } from '@/state/gitStore';
-import { GitBranch, GitCommit, GitMerge, RotateCcw, Cherry, Terminal, AlertCircle } from 'lucide-react';
+import { GitBranch, GitCommit, GitMerge, RotateCcw, Cherry, Terminal, AlertCircle, Play } from 'lucide-react';
 import { validateCommand } from './CommandValidator';
 
 interface SmartActionsPanelProps {
   allowedOps?: string[];
   avoidCommands?: string[];
+  undoDisabled?: boolean;
 }
 
-export const SmartActionsPanel = ({ allowedOps, avoidCommands }: SmartActionsPanelProps) => {
+export const SmartActionsPanel = ({ allowedOps, avoidCommands, undoDisabled }: SmartActionsPanelProps) => {
   const git = useGitStore();
   const [cmd, setCmd] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -195,8 +196,19 @@ export const SmartActionsPanel = ({ allowedOps, avoidCommands }: SmartActionsPan
                   onClick={() => executeCommand()}
                   disabled={currentValidation && !currentValidation.valid}
                   className="flex-shrink-0"
+                  size="sm"
                 >
-                  Выполнить
+                  <Play className="h-4 w-4" />
+                </Button>
+                <Button 
+                  onClick={() => git.undo()} 
+                  size="sm" 
+                  variant="outline"
+                  disabled={git.history.length === 0 || undoDisabled}
+                  title={undoDisabled ? "Задача решена — отмена недоступна" : git.history.length === 0 ? "Нет команд для отмены" : "Отменить последнюю команду"}
+                  className="flex-shrink-0"
+                >
+                  <RotateCcw className="h-4 w-4" />
                 </Button>
               </div>
               

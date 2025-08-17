@@ -5,6 +5,7 @@ import { computeLCA, genNewId, getHeadCommitId, isAncestor } from '@/git/utils';
 interface GitStoreState {
   repo: RepoState;
   logs: ActionLogItem[];
+  history: RepoState[];
   setRepo: (repo: RepoState) => void;
   reset: (repo: RepoState) => void;
   checkout: (ref: string) => void;
@@ -14,6 +15,7 @@ interface GitStoreState {
   rebase: (ontoBranch: string) => void;
   resetHard: (toCommit: string) => void;
   cherryPick: (commitId: string) => void;
+  undo: () => void;
 }
 
 const emptyRepo: RepoState = {
@@ -30,22 +32,44 @@ function log(state: GitStoreState, op: ActionLogItem['op'], message: string) {
   state.logs.unshift({ ts: Date.now(), op, message });
 }
 
+function pushHistory(state: GitStoreState) {
+  state.history.push(structuredClone(state.repo));
+  // Keep only last 10 states to prevent memory issues
+  if (state.history.length > 10) {
+    state.history = state.history.slice(-10);
+  }
+}
+
 export const useGitStore = create<GitStoreState>((set, get) => ({
   repo: emptyRepo,
   logs: [],
+  history: [],
   setRepo: (repo) => set({ repo }),
-  reset: (repo) => set({ repo, logs: [] }),
+  reset: (repo) => set({ repo, logs: [], history: [] }),
+
+  undo: () => {
+    const state = get();
+    if (state.history.length === 0) {
+      log(get(), 'error', 'No commands to undo');
+      return;
+    }
+    const previousRepo = state.history.pop()!;
+    set({ repo: previousRepo, history: [...state.history] });
+    log(get(), 'system', 'Undo last command');
+  },
 
   checkout: (ref: string) => {
     const state = get();
     const repo = structuredClone(state.repo);
     if (repo.branches[ref]) {
+      pushHistory(state);
       repo.head = { type: 'branch', ref } satisfies Head;
       set({ repo });
       log(get(), 'checkout', `checkout ${ref}`);
       return;
     }
     if (repo.commits[ref]) {
+      pushHistory(state);
       repo.head = { type: 'detached', ref };
       set({ repo });
       log(get(), 'checkout', `checkout ${ref} (detached)`);
@@ -72,6 +96,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
       log(get(), 'error', `Invalid from ref`);
       return;
     }
+    pushHistory(state);
     repo.branches[name] = { name, tip: fromCommit };
     set({ repo });
     log(get(), 'branch.create', `branch ${name} @ ${fromCommit}`);
@@ -83,6 +108,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
     const parent = getHeadCommitId(repo);
     const id = genNewId('C');
     const commit: Commit = { id, parents: [parent], message };
+    pushHistory(state);
     repo.commits[id] = commit;
     if (repo.head.type === 'branch') {
       repo.branches[repo.head.ref].tip = id;
@@ -109,12 +135,14 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
     }
     if (isAncestor(repo.commits, targetTip, fromTip)) {
       // Fast-forward
+      pushHistory(state);
       repo.branches[targetBranch].tip = fromTip;
       set({ repo });
       log(get(), 'merge', `fast-forward ${fromBranch} -> ${targetBranch}`);
       return;
     }
     // Create merge commit
+    pushHistory(state);
     const id = genNewId('M');
     repo.commits[id] = { id, parents: [targetTip, fromTip], message: `merge ${fromBranch} into ${targetBranch}` };
     repo.branches[targetBranch].tip = id;
@@ -151,6 +179,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
     
     if (lca === curTip) {
       // Fast-forward case
+      pushHistory(state);
       repo.branches[curBranch].tip = ontoTip;
       set({ repo });
       log(get(), 'rebase', `fast-forward ${curBranch} to ${ontoBranch}`);
@@ -193,6 +222,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
       newBase = newId;
     }
     
+    pushHistory(state);
     repo.branches[curBranch].tip = newBase;
     set({ repo });
     log(get(), 'rebase', `rebased ${curBranch} onto ${ontoBranch} (${toReplay.length} commits)`);
@@ -206,6 +236,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
         log(get(), 'error', `Commit not found: ${toCommit}`);
         return;
       }
+      pushHistory(state);
       repo.branches[repo.head.ref].tip = toCommit;
       set({ repo });
       log(get(), 'reset.hard', `reset --hard ${toCommit}`);
@@ -216,6 +247,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
       log(get(), 'error', `Commit not found: ${toCommit}`);
       return;
     }
+    pushHistory(state);
     repo.head = { type: 'detached', ref: toCommit };
     set({ repo });
     log(get(), 'reset.hard', `detached reset to ${toCommit}`);
@@ -231,6 +263,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
     }
     const parent = getHeadCommitId(repo);
     const id = genNewId('P');
+    pushHistory(state);
     repo.commits[id] = { id, parents: [parent], message: `cherry-pick: ${source.message}` };
     if (repo.head.type === 'branch') {
       repo.branches[repo.head.ref].tip = id;

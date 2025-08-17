@@ -141,6 +141,7 @@ export default function TasksPage() {
           <SmartActionsPanel 
             allowedOps={currentTask.allowedOps}
             avoidCommands={getAvoidCommands(currentTask.id)}
+            undoDisabled={isCompleted}
           />
         </div>
 
@@ -221,17 +222,14 @@ export default function TasksPage() {
                 )}
               </CardContent>
             </Card>
-            {/* Move SmartActionsPanel under the main card for wider command input */}
-            <div className="mt-6">
-              <SmartActionsPanel 
-                allowedOps={currentTask.allowedOps}
-                avoidCommands={getAvoidCommands(currentTask.id)}
-              />
-            </div>
           </section>
 
           <aside className="col-span-3">
-            {/* Empty sidebar - could be used for future features */}
+            <SmartActionsPanel 
+              allowedOps={currentTask.allowedOps}
+              avoidCommands={getAvoidCommands(currentTask.id)}
+              undoDisabled={isCompleted}
+            />
           </aside>
         </div>
       </main>
