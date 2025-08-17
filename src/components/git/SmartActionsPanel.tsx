@@ -146,14 +146,14 @@ export const SmartActionsPanel = ({ allowedOps, avoidCommands, undoDisabled }: S
                 <Button
                   key={i}
                   variant="outline"
-                  className="justify-start text-left h-auto p-3 min-w-0 w-full"
+                  className="justify-start text-left h-auto min-h-10 p-3 w-full whitespace-normal break-words items-start"
                   onClick={() => runCommand(suggestion.command)}
                   disabled={!can(getOperationFromCommand(suggestion.command))}
                 >
-                  <suggestion.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <suggestion.icon className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium whitespace-normal">{suggestion.label}</div>
-                    <div className="text-xs text-muted-foreground whitespace-normal">{suggestion.description}</div>
+                    <div className="font-medium leading-tight">{suggestion.label}</div>
+                    <div className="text-xs text-muted-foreground leading-tight mt-1">{suggestion.description}</div>
                   </div>
                 </Button>
               ))
