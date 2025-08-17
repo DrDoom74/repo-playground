@@ -26,9 +26,10 @@ interface LayoutPath {
 // Layout constants
 const COMMIT_RADIUS = 6;
 const COMMIT_SPACING_Y = 60;
-const LANE_WIDTH = 40;
+const LANE_WIDTH = 50;
 const PADDING = 40;
-const HEAD_ZONE_WIDTH = 60;
+const HEAD_ZONE_WIDTH = 80;
+const MESSAGE_ZONE_WIDTH = 160;
 
 const BRANCH_COLORS = [
   'hsl(var(--primary))',
@@ -44,6 +45,9 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
 
   if (!layout) return null;
 
+  // Calculate vertical offset to push graph to bottom when few commits
+  const verticalOffset = Math.max(0, height - layout.height - PADDING);
+
   return (
     <div className="w-full">
       <svg
@@ -58,6 +62,7 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
           fill="hsl(var(--card))"
         />
         
+        <g transform={`translate(0, ${verticalOffset})`}>
         {/* Connection paths - strictly orthogonal */}
         {layout.paths.map((path, index) => (
           <g key={`path-${index}`}>
@@ -112,7 +117,7 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
             
             {/* Commit message */}
             <text
-              x={commit.x + 25}
+              x={commit.x + HEAD_ZONE_WIDTH + MESSAGE_ZONE_WIDTH}
               y={commit.y + 1}
               className="text-sm fill-foreground font-mono pointer-events-none"
             >
@@ -123,16 +128,16 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
             {commit.isHead && (
               <g>
                 <rect
-                  x={commit.x - 30}
+                  x={commit.x + 15}
                   y={commit.y - 8}
-                  width={24}
+                  width={30}
                   height={16}
                   rx="3"
                   fill="hsl(var(--primary))"
                   className="drop-shadow-sm"
                 />
                 <text
-                  x={commit.x - 18}
+                  x={commit.x + 30}
                   y={commit.y + 1}
                   textAnchor="middle"
                   className="text-xs fill-primary-foreground font-bold pointer-events-none"
@@ -143,29 +148,33 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
             )}
             
             {/* Branch labels */}
-            {commit.branches.map((branch, branchIndex) => (
-              <g key={`${commit.id}-${branch}`}>
-                <rect
-                  x={commit.x + 35 + (branchIndex * 60)}
-                  y={commit.y - 8}
-                  width={55}
-                  height={16}
-                  rx="8"
-                  fill="hsl(var(--secondary))"
-                  stroke="hsl(var(--border))"
-                  strokeWidth="1"
-                  className="drop-shadow-sm"
-                />
-                <text
-                  x={commit.x + 62 + (branchIndex * 60)}
-                  y={commit.y + 1}
-                  textAnchor="middle"
-                  className="text-xs fill-secondary-foreground font-medium pointer-events-none"
-                >
-                  {branch}
-                </text>
-              </g>
-            ))}
+            {commit.branches.map((branch, branchIndex) => {
+              const labelWidth = Math.max(50, branch.length * 8 + 16);
+              const labelX = commit.x + 50 + (branchIndex * (labelWidth + 10));
+              return (
+                <g key={`${commit.id}-${branch}`}>
+                  <rect
+                    x={labelX}
+                    y={commit.y - 8}
+                    width={labelWidth}
+                    height={16}
+                    rx="8"
+                    fill="hsl(var(--secondary))"
+                    stroke="hsl(var(--border))"
+                    strokeWidth="1"
+                    className="drop-shadow-sm"
+                  />
+                  <text
+                    x={labelX + labelWidth / 2}
+                    y={commit.y + 1}
+                    textAnchor="middle"
+                    className="text-xs fill-secondary-foreground font-medium pointer-events-none"
+                  >
+                    {branch}
+                  </text>
+                </g>
+              );
+            })}
           </g>
         ))}
         
@@ -177,6 +186,7 @@ export const GitGraphVertical = memo(({ state, height = 400, width = 600 }: GitG
         >
           * Git graph: oldest ↓ to newest ↑
         </text>
+        </g>
       </svg>
     </div>
   );
@@ -242,7 +252,7 @@ function computeVerticalLayout(state: RepoState, containerWidth: number): {
 
   // Create commit positions (bottom-up: oldest at bottom, newest at top)
   const maxLane = Math.max(...Array.from(commitLanes.values()));
-  const graphWidth = HEAD_ZONE_WIDTH + (maxLane + 1) * LANE_WIDTH + 200;
+  const graphWidth = HEAD_ZONE_WIDTH + (maxLane + 1) * LANE_WIDTH + MESSAGE_ZONE_WIDTH + 300;
   const centerOffset = Math.max(0, (containerWidth - graphWidth) / 2);
   
   const layoutCommits: LayoutCommit[] = orderedCommits.map((commit, index) => {
