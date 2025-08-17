@@ -13,6 +13,8 @@ export function useProgress() {
   const updateProgress = useCallback((newProgress: Progress) => {
     setProgress(newProgress);
     saveProgress(newProgress);
+    // Dispatch event to notify other components
+    window.dispatchEvent(new CustomEvent('progress-updated'));
   }, []);
 
   const resetProgress = useCallback(() => {
@@ -29,10 +31,12 @@ export function useProgress() {
     
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('progress-reset', handleStorageChange);
+    window.addEventListener('progress-updated', handleStorageChange);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('progress-reset', handleStorageChange);
+      window.removeEventListener('progress-updated', handleStorageChange);
     };
   }, []);
 

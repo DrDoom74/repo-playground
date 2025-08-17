@@ -9,9 +9,10 @@ import { validateCommand } from './CommandValidator';
 
 interface SmartActionsPanelProps {
   allowedOps?: string[];
+  avoidCommands?: string[];
 }
 
-export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
+export const SmartActionsPanel = ({ allowedOps, avoidCommands }: SmartActionsPanelProps) => {
   const git = useGitStore();
   const [cmd, setCmd] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -112,8 +113,9 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
   }, [cmd, git.repo]);
 
   const filteredSuggestions = suggestions.filter(s => 
-    !cmd || s.command.toLowerCase().includes(cmd.toLowerCase()) || 
-    s.label.toLowerCase().includes(cmd.toLowerCase())
+    (!cmd || s.command.toLowerCase().includes(cmd.toLowerCase()) || 
+    s.label.toLowerCase().includes(cmd.toLowerCase())) &&
+    (!avoidCommands || !avoidCommands.includes(s.command))
   );
 
   return (
@@ -138,21 +140,27 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
             </div>
             
             {/* Smart suggestions */}
-            {filteredSuggestions.slice(0, 4).map((suggestion, i) => (
+            {filteredSuggestions.length > 0 ? (
+              filteredSuggestions.slice(0, 4).map((suggestion, i) => (
                 <Button
-                key={i}
-                variant="outline"
-                className="justify-start text-left h-auto p-3 min-w-0"
-                onClick={() => runCommand(suggestion.command)}
-                disabled={!can(getOperationFromCommand(suggestion.command))}
-              >
-                <suggestion.icon className="w-4 h-4 mr-2 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate">{suggestion.label}</div>
-                  <div className="text-xs text-muted-foreground break-words">{suggestion.description}</div>
-                </div>
-              </Button>
-            ))}
+                  key={i}
+                  variant="outline"
+                  className="justify-start text-left h-auto p-3 min-w-0 w-full"
+                  onClick={() => runCommand(suggestion.command)}
+                  disabled={!can(getOperationFromCommand(suggestion.command))}
+                >
+                  <suggestion.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate">{suggestion.label}</div>
+                    <div className="text-xs text-muted-foreground break-words">{suggestion.description}</div>
+                  </div>
+                </Button>
+              ))
+            ) : (
+              <div className="text-muted-foreground text-center py-4 text-sm">
+                Нет доступных быстрых действий
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -181,11 +189,12 @@ export const SmartActionsPanel = ({ allowedOps }: SmartActionsPanelProps) => {
                     }
                   }}
                   onFocus={() => setShowSuggestions(cmd.length > 0)}
-                  className={`font-mono ${currentValidation && !currentValidation.valid ? 'border-destructive' : ''}`}
+                  className={`font-mono flex-1 min-w-0 ${currentValidation && !currentValidation.valid ? 'border-destructive' : ''}`}
                 />
                 <Button 
                   onClick={() => executeCommand()}
                   disabled={currentValidation && !currentValidation.valid}
+                  className="flex-shrink-0"
                 >
                   Выполнить
                 </Button>

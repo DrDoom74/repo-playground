@@ -1,8 +1,11 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { useProgress } from '@/hooks/useProgress';
 
 export default function Header() {
+  const { totalScore } = useProgress();
+  
   const resetProgress = () => {
     localStorage.removeItem('git-trainer:v1:progress');
     // Dispatch custom event to notify other components
@@ -16,13 +19,16 @@ export default function Header() {
   return (
     <header className="border-b sticky top-0 z-10 bg-background/80 backdrop-blur">
       <div className="container mx-auto flex items-center justify-between py-3">
-        <Link to="/" className="font-semibold tracking-tight">AKlimenko School — Git тренажёр</Link>
+        <Link to="/" className="font-semibold tracking-tight">Git тренажёр для новичков</Link>
         <nav className="flex items-center gap-1">
           <NavLink className={navClass} to="/tasks">Задачи</NavLink>
           <NavLink className={navClass} to="/sandbox">Песочница</NavLink>
           <NavLink className={navClass} to="/theory">Теория</NavLink>
         </nav>
-        <Button variant="secondary" onClick={resetProgress}>Сброс прогресса</Button>
+        <div className="flex items-center gap-4">
+          <div className="text-primary font-medium">Очки: {totalScore}</div>
+          <Button variant="secondary" onClick={resetProgress}>Сброс прогресса</Button>
+        </div>
       </div>
     </header>
   );

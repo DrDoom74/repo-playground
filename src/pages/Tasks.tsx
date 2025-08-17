@@ -30,7 +30,7 @@ export default function TasksPage() {
     setShowHint(false);
     setShowExplanation(false);
     // Check if task is already completed on load to prevent auto-completion
-    const isCompletedOnLoad = currentTask.target.every(assertion => checkAssertion(git.repo, assertion));
+    const isCompletedOnLoad = currentTask.target.every(assertion => checkAssertion(currentTask.initial, assertion));
     setHasCompletedOnLoad(isCompletedOnLoad);
   }, [taskIdx, currentTask.initial]);
 
@@ -110,13 +110,13 @@ export default function TasksPage() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => git.reset(currentTask.initial)} className="text-xs">
+                <Button variant="secondary" onClick={() => git.reset(currentTask.initial)} className="text-xs min-w-0">
                   Сбросить
                 </Button>
-                <Button variant="outline" onClick={() => setShowHint(!showHint)} className="text-xs">
+                <Button variant="outline" onClick={() => setShowHint(!showHint)} className="text-xs min-w-0 truncate">
                   {showHint ? 'Скрыть подсказку' : 'Подсказку'}
                 </Button>
-                <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)} className="text-xs">
+                <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)} className="text-xs min-w-0 truncate">
                   {showExplanation ? 'Скрыть объяснение' : 'Объяснение'}
                 </Button>
               </div>
@@ -138,7 +138,10 @@ export default function TasksPage() {
           </Card>
 
           {/* Actions Panel */}
-          <SmartActionsPanel allowedOps={currentTask.allowedOps} />
+          <SmartActionsPanel 
+            allowedOps={currentTask.allowedOps}
+            avoidCommands={getAvoidCommands(currentTask.id)}
+          />
         </div>
 
         {/* Desktop Layout */}
@@ -191,14 +194,14 @@ export default function TasksPage() {
                   />
                 </div>
 
-                <div className="mt-4 flex gap-2">
-                  <Button variant="secondary" onClick={() => git.reset(currentTask.initial)}>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => git.reset(currentTask.initial)} className="min-w-0">
                     Сбросить задачу
                   </Button>
-                  <Button variant="outline" onClick={() => setShowHint(!showHint)}>
+                  <Button variant="outline" onClick={() => setShowHint(!showHint)} className="min-w-0 truncate">
                     {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
                   </Button>
-                  <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)}>
+                  <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)} className="min-w-0 truncate">
                     {showExplanation ? 'Скрыть объяснение' : 'Показать объяснение'}
                   </Button>
                 </div>
@@ -218,10 +221,17 @@ export default function TasksPage() {
                 )}
               </CardContent>
             </Card>
+            {/* Move SmartActionsPanel under the main card for wider command input */}
+            <div className="mt-6">
+              <SmartActionsPanel 
+                allowedOps={currentTask.allowedOps}
+                avoidCommands={getAvoidCommands(currentTask.id)}
+              />
+            </div>
           </section>
 
           <aside className="col-span-3">
-            <SmartActionsPanel allowedOps={currentTask.allowedOps} />
+            {/* Empty sidebar - could be used for future features */}
           </aside>
         </div>
       </main>
@@ -230,4 +240,13 @@ export default function TasksPage() {
   );
 }
 
-// These functions are now handled by useProgress hook
+function getAvoidCommands(taskId: string): string[] {
+  switch (taskId) {
+    case 'T01':
+      return ['git checkout feature'];
+    case 'T02':
+      return ['git branch hotfix'];
+    default:
+      return [];
+  }
+}
