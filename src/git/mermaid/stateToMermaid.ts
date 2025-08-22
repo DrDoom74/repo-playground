@@ -1,8 +1,8 @@
 import { RepoState, CommitID, Commit } from '../types';
 
-export function stateToMermaidGitGraph(state: RepoState): string {
+export function stateToMermaidGitGraph(state: RepoState, direction: 'TB' | 'LR' | 'RL' = 'TB'): string {
   if (!state.commits || Object.keys(state.commits).length === 0) {
-    return 'gitGraph TB:\n    commit id: "empty"';
+    return `gitGraph ${direction}:\n    commit id: "empty"`;
   }
 
   const commits = state.commits;
@@ -26,7 +26,7 @@ export function stateToMermaidGitGraph(state: RepoState): string {
   // Assign commits to branches based on first-parent relationships
   assignCommitsToBranches(commits, branches, commitToBranch, mainBranchName);
   
-  let mermaidCode = 'gitGraph TB:\n';
+  let mermaidCode = `gitGraph ${direction}:\n`;
   const createdBranches = new Set<string>();
   let currentBranch = mainBranchName;
   

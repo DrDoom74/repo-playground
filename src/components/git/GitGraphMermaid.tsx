@@ -6,9 +6,10 @@ import mermaid from 'mermaid';
 interface GitGraphMermaidProps {
   state: RepoState;
   height?: number;
+  direction?: 'TB' | 'LR' | 'RL';
 }
 
-export function GitGraphMermaid({ state, height = 420 }: GitGraphMermaidProps) {
+export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGraphMermaidProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -38,7 +39,7 @@ export function GitGraphMermaid({ state, height = 420 }: GitGraphMermaidProps) {
 
     const renderGraph = async () => {
       try {
-        const mermaidCode = stateToMermaidGitGraph(state);
+        const mermaidCode = stateToMermaidGitGraph(state, direction);
         const id = `mermaid-${Date.now()}`;
         
         const { svg } = await mermaid.render(id, mermaidCode);
@@ -63,7 +64,7 @@ export function GitGraphMermaid({ state, height = 420 }: GitGraphMermaidProps) {
     };
 
     renderGraph();
-  }, [state, height, isInitialized]);
+  }, [state, height, direction, isInitialized]);
 
   return (
     <div 

@@ -7,13 +7,14 @@ interface GitGraphProps {
   state: RepoState;
   height?: number | string;
   renderer?: 'custom' | 'mermaid';
+  direction?: 'TB' | 'LR' | 'RL';
 }
 
-export const GitGraph = memo(({ state, height = 420, renderer = 'custom' }: GitGraphProps) => {
+export const GitGraph = memo(({ state, height = 420, renderer = 'custom', direction = 'TB' }: GitGraphProps) => {
   const numericHeight = typeof height === 'number' ? height : parseInt(String(height)) || 420;
   
   if (renderer === 'mermaid') {
-    return <GitGraphMermaid state={state} height={numericHeight} />;
+    return <GitGraphMermaid state={state} height={numericHeight} direction={direction} />;
   }
   
   return (

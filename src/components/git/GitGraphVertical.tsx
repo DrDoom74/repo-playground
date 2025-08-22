@@ -247,32 +247,42 @@ function computeVerticalLayout(state: RepoState, containerWidth: number): {
     branchColors.set(branch.name, BRANCH_COLORS[i % BRANCH_COLORS.length]);
   });
 
-  // Process commits from oldest to newest
-  orderedCommits.forEach((commit, index) => {
-    let assignedLane = 0;
-    
-    if (index === 0) {
-      // First (oldest) commit gets lane 0
-      assignedLane = 0;
-    } else {
-      // Try to continue on parent's lane
-      const parentLanes = commit.parents
-        .map(p => commitLanes.get(p))
-        .filter(lane => lane !== undefined) as number[];
-      
-      if (parentLanes.length > 0) {
-        // Use first parent's lane if available
-        assignedLane = parentLanes[0];
-      } else {
-        // Find next available lane
-        while (activeLanes.has(assignedLane)) {
-          assignedLane++;
-        }
-      }
+  // Branch-based lane assignment for consistent layout
+  const branchLanes = new Map<string, number>();
+  const mainBranch = state.branches.main?.name || state.branches.master?.name || Object.keys(state.branches)[0] || 'main';
+  
+  // Assign main branch to lane 0
+  branchLanes.set(mainBranch, 0);
+  
+  // Assign other branches to subsequent lanes
+  let nextLane = 1;
+  Object.values(state.branches).forEach(branch => {
+    if (branch.name !== mainBranch && !branchLanes.has(branch.name)) {
+      branchLanes.set(branch.name, nextLane++);
     }
+  });
+
+  // Find which branch each commit belongs to
+  const commitToBranch = new Map<string, string>();
+  Object.entries(state.branches).forEach(([branchName, branch]) => {
+    let current = branch.tip;
+    const visited = new Set<string>();
     
-    commitLanes.set(commit.id, assignedLane);
-    activeLanes.add(assignedLane);
+    while (current && !visited.has(current) && state.commits[current]) {
+      visited.add(current);
+      if (!commitToBranch.has(current)) {
+        commitToBranch.set(current, branchName);
+      }
+      const commit = state.commits[current];
+      current = commit.parents[0]; // Follow first parent
+    }
+  });
+
+  // Assign lanes based on branch membership
+  orderedCommits.forEach(commit => {
+    const branchName = commitToBranch.get(commit.id) || mainBranch;
+    const lane = branchLanes.get(branchName) || 0;
+    commitLanes.set(commit.id, lane);
   });
 
   // Get HEAD commit ID
