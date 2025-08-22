@@ -19,15 +19,15 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
       mermaid.initialize({
         startOnLoad: false,
         securityLevel: 'strict',
-        theme: 'neutral',
+        theme: 'base',
         themeVariables: {
-          background: 'hsl(var(--background))',
-          primaryColor: 'hsl(var(--primary))',
-          primaryTextColor: 'hsl(var(--foreground))',
-          primaryBorderColor: 'hsl(var(--border))',
-          lineColor: 'hsl(var(--border))',
-          secondaryColor: 'hsl(var(--muted))',
-          tertiaryColor: 'hsl(var(--accent))',
+          background: '#ffffff',
+          primaryColor: '#3b82f6',
+          primaryTextColor: '#1f2937',
+          primaryBorderColor: '#d1d5db',
+          lineColor: '#6b7280',
+          secondaryColor: '#f3f4f6',
+          tertiaryColor: '#e5e7eb',
         },
       });
       setIsInitialized(true);
@@ -52,7 +52,7 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
           if (svgElement) {
             svgElement.style.maxWidth = '100%';
             svgElement.style.height = `${height}px`;
-            svgElement.style.background = 'hsl(var(--background))';
+            svgElement.style.background = 'transparent';
           }
         }
       } catch (error) {
