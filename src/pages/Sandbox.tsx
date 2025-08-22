@@ -7,6 +7,7 @@ import { useGitStore } from '@/state/gitStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
@@ -54,10 +55,17 @@ export default function SandboxPage() {
                 </div>
                 
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Направление (Mermaid):</Label>
+                  <Label className="text-sm font-medium mb-2 block">Направление:</Label>
                   <RadioGroup 
                     value={direction} 
-                    onValueChange={(value: 'TB' | 'LR' | 'RL') => setDirection(value)}
+                    onValueChange={(value: 'TB' | 'LR' | 'RL') => {
+                      if (renderer === 'mermaid' && value === 'RL') {
+                        sonnerToast('RL направление в Mermaid эмулируется через LR + зеркалирование', {
+                          duration: 3000,
+                        });
+                      }
+                      setDirection(value);
+                    }}
                     className="flex gap-4"
                     disabled={renderer === 'custom'}
                   >
@@ -71,7 +79,9 @@ export default function SandboxPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="RL" id="rl" />
-                      <Label htmlFor="rl">Справа налево</Label>
+                      <Label htmlFor="rl" className={renderer === 'mermaid' ? 'text-muted-foreground' : ''}>
+                        Справа налево {renderer === 'mermaid' && '(эмулируется)'}
+                      </Label>
                     </div>
                   </RadioGroup>
                 </div>

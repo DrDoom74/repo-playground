@@ -1,8 +1,11 @@
 import { RepoState, CommitID, Commit } from '../types';
 
 export function stateToMermaidGitGraph(state: RepoState, direction: 'TB' | 'LR' | 'RL' = 'TB'): string {
+  // Sanitize direction - gitGraph only supports TB and LR
+  const sanitizedDirection = direction === 'RL' ? 'LR' : direction;
+  
   if (!state.commits || Object.keys(state.commits).length === 0) {
-    return `gitGraph ${direction}:\n    commit id: "empty"`;
+    return `gitGraph ${sanitizedDirection}:\n    commit id: "empty"`;
   }
 
   const commits = state.commits;
@@ -26,9 +29,10 @@ export function stateToMermaidGitGraph(state: RepoState, direction: 'TB' | 'LR' 
   // Assign commits to branches based on first-parent relationships
   assignCommitsToBranches(commits, branches, commitToBranch, mainBranchName);
   
-  let mermaidCode = `gitGraph ${direction}:\n`;
+  let mermaidCode = `gitGraph ${sanitizedDirection}:\n`;
   const createdBranches = new Set<string>();
   let currentBranch = mainBranchName;
+  createdBranches.add(mainBranchName);
   
   for (const commitId of sortedCommits) {
     const commit = commits[commitId];
@@ -36,12 +40,16 @@ export function stateToMermaidGitGraph(state: RepoState, direction: 'TB' | 'LR' 
     
     // Create branch if needed
     if (!createdBranches.has(branchName) && branchName !== mainBranchName) {
+      // Ensure we're on the base branch before creating new branch
+      if (currentBranch !== mainBranchName) {
+        mermaidCode += `    checkout ${mainBranchName}\n`;
+        currentBranch = mainBranchName;
+      }
       mermaidCode += `    branch ${branchName}\n`;
       createdBranches.add(branchName);
-    }
-    
-    // Switch to branch if needed
-    if (currentBranch !== branchName) {
+      currentBranch = branchName;
+    } else if (currentBranch !== branchName) {
+      // Switch to branch if needed (avoid redundant checkouts)
       mermaidCode += `    checkout ${branchName}\n`;
       currentBranch = branchName;
     }
