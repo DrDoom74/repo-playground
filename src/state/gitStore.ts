@@ -10,7 +10,7 @@ interface GitStoreState {
   reset: (repo: RepoState) => void;
   checkout: (ref: string) => void;
   createBranch: (name: string, fromRef?: string) => void;
-  commit: (message: string) => void;
+  commit: (message: string) => string;
   merge: (fromBranch: string) => void;
   rebase: (ontoBranch: string) => void;
   resetHard: (toCommit: string) => void;
@@ -120,6 +120,7 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
     }
     set({ repo });
     log(get(), 'commit', `commit ${id}: ${message}`);
+    return id;
   },
 
   merge: (fromBranch: string) => {
@@ -134,6 +135,14 @@ export const useGitStore = create<GitStoreState>((set, get) => ({
     const fromTip = repo.branches[fromBranch]?.tip;
     if (!fromTip) {
       log(get(), 'error', `Branch not found: ${fromBranch}`);
+      return;
+    }
+    if (fromBranch === targetBranch) {
+      log(get(), 'error', `Cannot merge a branch into itself`);
+      return;
+    }
+    if (targetTip === fromTip) {
+      log(get(), 'info', `Already up-to-date`);
       return;
     }
     if (isAncestor(repo.commits, targetTip, fromTip)) {

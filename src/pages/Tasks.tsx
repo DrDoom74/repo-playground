@@ -19,6 +19,7 @@ export default function TasksPage() {
   const [showHint, setShowHint] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [hasCompletedOnLoad, setHasCompletedOnLoad] = useState(false);
+  const [terminalKey, setTerminalKey] = useState(0);
   const currentTask = tasks[taskIdx];
   const { progress, updateProgress } = useProgress();
 
@@ -26,10 +27,17 @@ export default function TasksPage() {
     return currentTask.target.every(assertion => checkAssertion(git.repo, assertion));
   }, [git.repo, currentTask.target]);
 
+  const resetTask = useCallback(() => {
+    git.reset(structuredClone(currentTask.initial));
+    setTerminalKey(prev => prev + 1);
+    toast({ title: 'Задача сброшена', description: 'Репозиторий и терминал очищены' });
+  }, [git, currentTask.initial]);
+
   useEffect(() => {
     git.reset(structuredClone(currentTask.initial));
     setShowHint(false);
     setShowExplanation(false);
+    setTerminalKey(prev => prev + 1);
     // Check if task is already completed on load to prevent auto-completion
     const isCompletedOnLoad = currentTask.target.every(assertion => checkAssertion(currentTask.initial, assertion));
     setHasCompletedOnLoad(isCompletedOnLoad);
@@ -103,7 +111,7 @@ export default function TasksPage() {
               <div className="grid grid-cols-1 gap-4">
                 <BranchOverview />
                 <div className="h-[300px]">
-                  <GitTerminal />
+                  <GitTerminal key={terminalKey} />
                 </div>
               </div>
               
@@ -116,7 +124,7 @@ export default function TasksPage() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => git.reset(currentTask.initial)} className="text-xs min-w-0">
+                <Button variant="secondary" onClick={resetTask} className="text-xs min-w-0">
                   Сбросить
                 </Button>
                 <Button variant="outline" onClick={() => setShowHint(!showHint)} className="text-xs min-w-0 truncate">
@@ -188,7 +196,7 @@ export default function TasksPage() {
                   <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
                 </div>
                 <div className="h-[400px]">
-                  <GitTerminal />
+                  <GitTerminal key={terminalKey} />
                 </div>
                 
                 {/* Task Progress */}
@@ -200,7 +208,7 @@ export default function TasksPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button variant="secondary" onClick={() => git.reset(currentTask.initial)} className="min-w-0">
+                  <Button variant="secondary" onClick={resetTask} className="min-w-0">
                     Сбросить задачу
                   </Button>
                   <Button variant="outline" onClick={() => setShowHint(!showHint)} className="min-w-0 truncate">

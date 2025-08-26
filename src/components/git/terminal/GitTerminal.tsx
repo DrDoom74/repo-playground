@@ -13,7 +13,11 @@ interface TerminalLine {
   timestamp: number;
 }
 
-export function GitTerminal() {
+interface GitTerminalProps {
+  key?: string | number;
+}
+
+export function GitTerminal({ key }: GitTerminalProps = {}) {
   const git = useGitStore();
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<TerminalLine[]>([
@@ -23,7 +27,7 @@ export function GitTerminal() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const addLine = (type: TerminalLine['type'], content: string) => {
     const newLine: TerminalLine = {
@@ -94,11 +98,9 @@ export function GitTerminal() {
     }
   };
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom using sentinel
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [history]);
 
   // Focus input on mount
@@ -123,7 +125,7 @@ export function GitTerminal() {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-3 gap-3 min-h-0">
-        <ScrollArea className="flex-1 border border-border rounded p-3 bg-muted/20" ref={scrollRef}>
+        <ScrollArea className="flex-1 border border-border rounded p-3 bg-muted/20">
           <div className="font-mono text-sm space-y-1">
             {history.map((line, index) => (
               <div
@@ -139,11 +141,12 @@ export function GitTerminal() {
                 {line.content}
               </div>
             ))}
+            <div ref={bottomRef} />
           </div>
         </ScrollArea>
         
         <div className="flex gap-2">
-          <div className="flex-1 flex items-center gap-2 border border-border rounded px-3 py-2 bg-background">
+          <div className="flex-1 flex items-center gap-2 ring-1 ring-border focus-within:ring-primary rounded px-3 py-2 bg-background transition-colors">
             <span className="text-sm font-mono text-muted-foreground">
               {getCurrentPrompt()} $
             </span>
@@ -152,8 +155,8 @@ export function GitTerminal() {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="status, branch, commit -m 'message'..."
-              className="border-0 p-0 h-auto focus-visible:ring-0 font-mono text-sm"
+              placeholder="git status | status, git branch | branch, git commit -m 'message'..."
+              className="border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-mono text-sm"
             />
           </div>
           <Button 
