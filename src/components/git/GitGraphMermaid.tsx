@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { RepoState } from '@/git/types';
 import { stateToMermaidGitGraph } from '@/git/mermaid/stateToMermaid';
 import mermaid from 'mermaid';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Move } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GitGraphMermaidProps {
@@ -14,9 +14,14 @@ interface GitGraphMermaidProps {
 
 export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGraphMermaidProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgContainerRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [autoFit, setAutoFit] = useState(true);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     // Initialize Mermaid
@@ -25,6 +30,9 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
         startOnLoad: false,
         securityLevel: 'strict',
         theme: 'base',
+        gitGraph: {
+          rotateCommitLabel: false, // Disable commit label rotation
+        },
         themeVariables: {
           background: '#ffffff',
           primaryColor: '#3b82f6',
@@ -48,9 +56,6 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
         let actualDirection = direction;
         if (direction === 'RL') {
           actualDirection = 'LR';
-          toast('Справа налево не поддерживается, используется слева направо', {
-            duration: 3000,
-          });
         }
 
         const mermaidCode = stateToMermaidGitGraph(state, actualDirection);
@@ -62,32 +67,64 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
           
-          // Apply custom styles and zoom to the SVG
           const svgElement = containerRef.current.querySelector('svg');
           if (svgElement) {
-            if (autoFit) {
-              if (actualDirection === 'LR') {
-                svgElement.style.width = '100%';
-                svgElement.style.height = 'auto';
-                svgElement.style.maxHeight = `${height}px`;
-              } else {
-                svgElement.style.maxWidth = '100%';
-                svgElement.style.height = `${height}px`;
-              }
-            } else {
-              svgElement.style.transform = `scale(${zoom})`;
-              svgElement.style.transformOrigin = 'top left';
-            }
-            svgElement.style.background = 'transparent';
+            // Get SVG dimensions for proper fitting
+            const bbox = svgElement.getBBox();
+            const svgWidth = bbox.width;
+            const svgHeight = bbox.height;
             
-            // Apply RL visual effect if needed
+            if (autoFit) {
+              // Calculate scale to fit container
+              const containerWidth = containerRef.current.clientWidth - 20; // padding
+              const containerHeight = height - 20; // padding
+              
+              let scale = 1;
+              if (actualDirection === 'LR') {
+                scale = Math.min(containerWidth / svgWidth, containerHeight / svgHeight);
+              } else {
+                scale = Math.min(containerWidth / svgWidth, containerHeight / svgHeight);
+              }
+              
+              // Don't upscale - max scale is 1
+              scale = Math.min(scale, 1);
+              
+              const scaledWidth = svgWidth * scale;
+              const scaledHeight = svgHeight * scale;
+              
+              // Center the graph
+              const offsetX = (containerWidth - scaledWidth) / 2;
+              const offsetY = (containerHeight - scaledHeight) / 2;
+              
+              svgElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})${direction === 'RL' ? ' scaleX(-1)' : ''}`;
+              svgElement.style.transformOrigin = '0 0';
+            } else {
+              // Manual zoom mode
+              const transformX = panX + (containerRef.current.clientWidth / 2 - svgWidth * zoom / 2);
+              const transformY = panY + (height / 2 - svgHeight * zoom / 2);
+              
+              svgElement.style.transform = `translate(${transformX}px, ${transformY}px) scale(${zoom})${direction === 'RL' ? ' scaleX(-1)' : ''}`;
+              svgElement.style.transformOrigin = '0 0';
+            }
+            
+            svgElement.style.background = 'transparent';
+            svgElement.style.width = `${svgWidth}px`;
+            svgElement.style.height = `${svgHeight}px`;
+            
+            // Fix text rotation for RL direction
             if (direction === 'RL') {
-              svgElement.style.transform = `scaleX(-1) ${!autoFit ? `scale(${zoom})` : ''}`;
+              const textElements = svgElement.querySelectorAll('text');
+              textElements.forEach(textEl => {
+                textEl.style.transform = 'scaleX(-1)';
+              });
             }
           }
         }
       } catch (error) {
-        console.error('Mermaid rendering error:', error, 'State:', state, 'Direction:', direction);
+        console.error('Mermaid rendering error:', error);
+        console.error('Generated Mermaid code:', stateToMermaidGitGraph(state, direction === 'RL' ? 'LR' : direction));
+        console.error('State:', state);
+        console.error('Direction:', direction);
         if (containerRef.current) {
           containerRef.current.innerHTML = `
             <div class="text-destructive p-4 text-sm">
@@ -100,27 +137,55 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
     };
 
     renderGraph();
-  }, [state, height, direction, isInitialized, zoom, autoFit]);
+  }, [state, height, direction, isInitialized, zoom, autoFit, panX, panY]);
 
-  const handleZoomIn = () => {
+  const handleZoomIn = useCallback(() => {
     setAutoFit(false);
     setZoom(prev => Math.min(prev + 0.2, 3));
-  };
+  }, []);
 
-  const handleZoomOut = () => {
+  const handleZoomOut = useCallback(() => {
     setAutoFit(false);
     setZoom(prev => Math.max(prev - 0.2, 0.5));
-  };
+  }, []);
 
-  const handleFitToContainer = () => {
+  const handleFitToContainer = useCallback(() => {
     setAutoFit(true);
     setZoom(1);
-  };
+    setPanX(0);
+    setPanY(0);
+  }, []);
 
-  const handleResetZoom = () => {
+  const handleResetZoom = useCallback(() => {
     setAutoFit(false);
     setZoom(1);
-  };
+    setPanX(0);
+    setPanY(0);
+  }, []);
+
+  // Pan functionality
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (autoFit) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panX, y: e.clientY - panY });
+  }, [autoFit, panX, panY]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || autoFit) return;
+    setPanX(e.clientX - dragStart.x);
+    setPanY(e.clientY - dragStart.y);
+  }, [isDragging, autoFit, dragStart]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (autoFit) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoom(prev => Math.min(Math.max(prev + delta, 0.5), 3));
+  }, [autoFit]);
 
   return (
     <div className="relative">
@@ -132,6 +197,7 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
           onClick={handleZoomIn}
           className="p-2 h-8 w-8"
           disabled={autoFit || zoom >= 3}
+          title="Увеличить"
         >
           <ZoomIn className="h-3 w-3" />
         </Button>
@@ -141,6 +207,7 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
           onClick={handleZoomOut}
           className="p-2 h-8 w-8"
           disabled={autoFit || zoom <= 0.5}
+          title="Уменьшить"
         >
           <ZoomOut className="h-3 w-3" />
         </Button>
@@ -150,6 +217,7 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
           onClick={handleFitToContainer}
           className="p-2 h-8 w-8"
           disabled={autoFit}
+          title="Вписать в контейнер"
         >
           <Maximize2 className="h-3 w-3" />
         </Button>
@@ -159,15 +227,29 @@ export function GitGraphMermaid({ state, height = 420, direction = 'TB' }: GitGr
           onClick={handleResetZoom}
           className="p-2 h-8 w-8"
           disabled={autoFit || zoom === 1}
+          title="Сбросить масштаб"
         >
           <RotateCcw className="h-3 w-3" />
         </Button>
       </div>
 
+      {/* Pan Controls Info */}
+      {!autoFit && (
+        <div className="absolute top-2 left-2 z-10 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+          <Move className="h-3 w-3 inline mr-1" />
+          Перетаскивание: ЛКМ • Масштаб: колесо мыши
+        </div>
+      )}
+
       <div 
         ref={containerRef}
-        className="w-full overflow-auto bg-background border rounded-md"
+        className={`w-full bg-background border rounded-md overflow-hidden ${!autoFit ? 'cursor-grab' : ''} ${isDragging ? 'cursor-grabbing' : ''}`}
         style={{ height: `${height}px` }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
           Loading git graph...

@@ -62,9 +62,14 @@ export function stateToMermaidGitGraph(state: RepoState, direction: 'TB' | 'LR' 
       const secondParentBranch = commitToBranch.get(secondParent) || mainBranchName;
       
       if (firstParentBranch !== secondParentBranch) {
-        mermaidCode += `    checkout ${firstParentBranch}\n`;
+        // Ensure we're on the target branch before merging
+        if (currentBranch !== firstParentBranch) {
+          mermaidCode += `    checkout ${firstParentBranch}\n`;
+          currentBranch = firstParentBranch;
+        }
         mermaidCode += `    merge ${secondParentBranch}\n`;
-        currentBranch = firstParentBranch;
+        // Update the commit-to-branch mapping for the merge commit
+        commitToBranch.set(commitId, firstParentBranch);
         continue;
       }
     }
@@ -80,27 +85,45 @@ export function stateToMermaidGitGraph(state: RepoState, direction: 'TB' | 'LR' 
 }
 
 function topologicalSort(commits: Record<CommitID, Commit>, rootId: CommitID): CommitID[] {
-  const visited = new Set<CommitID>();
+  const inDegree = new Map<CommitID, number>();
+  const children = new Map<CommitID, CommitID[]>();
+  
+  // Initialize in-degree and children maps
+  Object.values(commits).forEach(commit => {
+    inDegree.set(commit.id, commit.parents.length);
+    commit.parents.forEach(parentId => {
+      if (!children.has(parentId)) {
+        children.set(parentId, []);
+      }
+      children.get(parentId)!.push(commit.id);
+    });
+  });
+  
+  // Kahn's algorithm for proper topological sort
+  const queue: CommitID[] = [];
   const result: CommitID[] = [];
   
-  function visit(commitId: CommitID) {
-    if (visited.has(commitId)) return;
-    visited.add(commitId);
+  // Start with nodes that have no incoming edges (roots)
+  inDegree.forEach((degree, commitId) => {
+    if (degree === 0) {
+      queue.push(commitId);
+    }
+  });
+  
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    result.push(current);
     
-    const commit = commits[commitId];
-    if (!commit) return;
-    
-    // Visit children first (commits that have this as parent)
-    Object.values(commits).forEach(c => {
-      if (c.parents.includes(commitId)) {
-        visit(c.id);
+    const commitChildren = children.get(current) || [];
+    commitChildren.forEach(child => {
+      const newDegree = inDegree.get(child)! - 1;
+      inDegree.set(child, newDegree);
+      if (newDegree === 0) {
+        queue.push(child);
       }
     });
-    
-    result.unshift(commitId);
   }
   
-  visit(rootId);
   return result;
 }
 
