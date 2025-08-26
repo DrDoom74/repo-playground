@@ -104,26 +104,28 @@ export default function TasksPage() {
             <CardHeader>
               <CardTitle className="text-lg">{currentTask.title}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="mb-4 prose prose-sm max-w-none dark:prose-invert text-sm">
+            <CardContent className="space-y-4">
+              <div className="prose prose-sm max-w-none dark:prose-invert text-sm">
                 <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
               </div>
+              
               <div className="grid grid-cols-1 gap-4">
                 <BranchOverview />
-                <div className="h-[300px]">
+                <div className="h-[300px] relative z-0">
                   <GitTerminal key={terminalKey} />
                 </div>
               </div>
               
-              {/* Task Progress */}
-              <div className="mt-4">
+              {/* Task Progress - with clear separation */}
+              <div className="border-t pt-4">
                 <TaskFeedback 
                   currentState={git.repo}
                   targetAssertions={currentTask.target}
                 />
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              {/* Action buttons - with clear separation */}
+              <div className="border-t pt-4 flex flex-wrap gap-2">
                 <Button variant="secondary" onClick={resetTask} className="text-xs min-w-0">
                   Сбросить
                 </Button>
@@ -135,15 +137,16 @@ export default function TasksPage() {
                 </Button>
               </div>
               
+              {/* Hint and explanation sections */}
               {showHint && (
-                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
                   <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">💡 Подсказка</div>
                   {currentTask.hint}
                 </div>
               )}
               
               {showExplanation && (
-                <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+                <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-sm">
                   <div className="font-medium text-green-800 dark:text-green-200 mb-1">✅ Объяснение</div>
                   {currentTask.explanation}
                 </div>
@@ -191,23 +194,25 @@ export default function TasksPage() {
               <CardHeader>
                 <CardTitle>{currentTask.title}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4 prose prose-sm max-w-none dark:prose-invert">
+              <CardContent className="space-y-4">
+                <div className="prose prose-sm max-w-none dark:prose-invert">
                   <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
                 </div>
-                <div className="h-[400px]">
+                
+                <div className="h-[400px] relative z-0">
                   <GitTerminal key={terminalKey} />
                 </div>
                 
-                {/* Task Progress */}
-                <div className="mt-4">
+                {/* Task Progress - with clear separation */}
+                <div className="border-t pt-4">
                   <TaskFeedback 
                     currentState={git.repo}
                     targetAssertions={currentTask.target}
                   />
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                {/* Action buttons - with clear separation */}
+                <div className="border-t pt-4 flex flex-wrap gap-2">
                   <Button variant="secondary" onClick={resetTask} className="min-w-0">
                     Сбросить задачу
                   </Button>
@@ -219,15 +224,16 @@ export default function TasksPage() {
                   </Button>
                 </div>
                 
+                {/* Hint and explanation sections */}
                 {showHint && (
-                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
                     <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">💡 Подсказка</div>
                     {currentTask.hint}
                   </div>
                 )}
                 
                 {showExplanation && (
-                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+                  <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg text-sm">
                     <div className="font-medium text-green-800 dark:text-green-200 mb-1">✅ Объяснение</div>
                     {currentTask.explanation}
                   </div>
