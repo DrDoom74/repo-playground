@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { GitGraph } from '@/components/git/GitGraph';
-import { SmartActionsPanel } from '@/components/git/SmartActionsPanel';
+import { GitTerminal } from '@/components/git/terminal/GitTerminal';
+import { BranchOverview } from '@/components/git/BranchOverview';
+import { TerminalHints } from '@/components/git/terminal/TerminalHints';
 import { TaskFeedback } from '@/components/tasks/TaskFeedback';
 import { tasks } from '@/tasks/tasks';
 import { useGitStore } from '@/state/gitStore';
@@ -99,7 +100,12 @@ export default function TasksPage() {
               <div className="mb-4 prose prose-sm max-w-none dark:prose-invert text-sm">
                 <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
               </div>
-              <GitGraph state={git.repo} height={280} />
+              <div className="grid grid-cols-1 gap-4">
+                <BranchOverview />
+                <div className="h-[300px]">
+                  <GitTerminal />
+                </div>
+              </div>
               
               {/* Task Progress */}
               <div className="mt-4">
@@ -137,12 +143,8 @@ export default function TasksPage() {
             </CardContent>
           </Card>
 
-          {/* Actions Panel */}
-          <SmartActionsPanel 
-            allowedOps={currentTask.allowedOps}
-            avoidCommands={getAvoidCommands(currentTask.id)}
-            undoDisabled={isCompleted}
-          />
+          {/* Hints Panel */}
+          <TerminalHints />
         </div>
 
         {/* Desktop Layout */}
@@ -185,7 +187,9 @@ export default function TasksPage() {
                 <div className="mb-4 prose prose-sm max-w-none dark:prose-invert">
                   <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
                 </div>
-                <GitGraph state={git.repo} height={320} />
+                <div className="h-[400px]">
+                  <GitTerminal />
+                </div>
                 
                 {/* Task Progress */}
                 <div className="mt-4">
@@ -225,11 +229,10 @@ export default function TasksPage() {
           </section>
 
           <aside className="col-span-3">
-            <SmartActionsPanel 
-              allowedOps={currentTask.allowedOps}
-              avoidCommands={getAvoidCommands(currentTask.id)}
-              undoDisabled={isCompleted}
-            />
+            <div className="space-y-6">
+              <BranchOverview />
+              <TerminalHints />
+            </div>
           </aside>
         </div>
       </main>

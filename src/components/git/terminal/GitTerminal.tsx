@@ -17,7 +17,8 @@ export function GitTerminal() {
   const git = useGitStore();
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<TerminalLine[]>([
-    { type: 'output', content: 'Git Terminal ready. Type "help" for available commands.', timestamp: Date.now() }
+    { type: 'output', content: 'Git Terminal ready. Type "help" for available commands.', timestamp: Date.now() },
+    { type: 'output', content: 'Commands can be prefixed with "git" or used directly (e.g., "status" or "git status")', timestamp: Date.now() }
   ]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -36,6 +37,16 @@ export function GitTerminal() {
   const executeCmd = () => {
     if (!command.trim()) return;
     
+    // Handle clear command specially
+    if (command.trim() === 'clear' || command.trim() === 'git clear') {
+      setHistory([
+        { type: 'output', content: 'Git Terminal ready. Type "help" for available commands.', timestamp: Date.now() },
+        { type: 'output', content: 'Commands can be prefixed with "git" or used directly (e.g., "status" or "git status")', timestamp: Date.now() }
+      ]);
+      setCommand('');
+      return;
+    }
+    
     // Add command to history
     addLine('command', `$ ${command}`);
     setCommandHistory(prev => [...prev, command]);
@@ -51,6 +62,13 @@ export function GitTerminal() {
     }
 
     setCommand('');
+  };
+
+  const clearTerminal = () => {
+    setHistory([
+      { type: 'output', content: 'Git Terminal ready. Type "help" for available commands.', timestamp: Date.now() },
+      { type: 'output', content: 'Commands can be prefixed with "git" or used directly (e.g., "status" or "git status")', timestamp: Date.now() }
+    ]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -104,7 +122,7 @@ export function GitTerminal() {
           Git Terminal
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-3 gap-3">
+      <CardContent className="flex-1 flex flex-col p-3 gap-3 min-h-0">
         <ScrollArea className="flex-1 border border-border rounded p-3 bg-muted/20" ref={scrollRef}>
           <div className="font-mono text-sm space-y-1">
             {history.map((line, index) => (
@@ -134,7 +152,7 @@ export function GitTerminal() {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter git command..."
+              placeholder="status, branch, commit -m 'message'..."
               className="border-0 p-0 h-auto focus-visible:ring-0 font-mono text-sm"
             />
           </div>

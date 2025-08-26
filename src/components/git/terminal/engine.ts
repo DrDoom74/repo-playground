@@ -2,7 +2,18 @@ import { useGitStore } from '@/state/gitStore';
 import { formatStatus, formatBranches, formatLog, formatShow, formatReflog } from '@/git/text/format';
 
 export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.getState>): string {
-  const parts = cmd.trim().split(/\s+/);
+  const trimmed = cmd.trim();
+  let parts = trimmed.split(/\s+/);
+  
+  // Handle git prefix - remove it if present
+  if (parts[0] === 'git') {
+    parts = parts.slice(1);
+  }
+  
+  if (parts.length === 0) {
+    throw new Error('No command specified');
+  }
+  
   const command = parts[0];
   const args = parts.slice(1);
 
@@ -53,9 +64,18 @@ export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.g
 
     // Write commands (existing functionality)
     case 'checkout':
-      if (!args[0]) throw new Error('checkout requires a branch or commit');
-      git.checkout(args[0]);
-      return `Switched to '${args[0]}'`;
+    case 'switch':
+      if (args[0] === '-b' && args[1]) {
+        // Create and switch to new branch
+        git.createBranch(args[1]);
+        git.checkout(args[1]);
+        return `Switched to a new branch '${args[1]}'`;
+      } else if (args[0]) {
+        git.checkout(args[0]);
+        return `Switched to '${args[0]}'`;
+      } else {
+        throw new Error('checkout/switch requires a branch or commit');
+      }
 
     case 'commit':
       const msgIndex = args.indexOf('-m');
