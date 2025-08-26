@@ -111,7 +111,7 @@ export default function TasksPage() {
               
               <div className="grid grid-cols-1 gap-4">
                 <BranchOverview />
-                <div className="h-[300px] relative z-0">
+                <div className="h-[300px] relative z-0 mb-4">
                   <GitTerminal key={terminalKey} />
                 </div>
               </div>
@@ -199,7 +199,7 @@ export default function TasksPage() {
                   <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
                 </div>
                 
-                <div className="h-[400px] relative z-0">
+                <div className="h-[400px] relative z-0 mb-4">
                   <GitTerminal key={terminalKey} />
                 </div>
                 

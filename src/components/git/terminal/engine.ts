@@ -1,5 +1,6 @@
 import { useGitStore } from '@/state/gitStore';
 import { formatStatus, formatBranches, formatLog, formatShow, formatReflog } from '@/git/text/format';
+import { isAncestor, getBranchTip, getHeadCommitId } from '@/git/utils';
 
 export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.getState>): string {
   const trimmed = cmd.trim();
@@ -44,14 +45,11 @@ export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.g
       } else {
         // Create new branch
         const branchName = args[0];
-        const prevBranchCount = Object.keys(git.repo.branches).length;
-        git.createBranch(branchName);
-        const newBranchCount = Object.keys(git.repo.branches).length;
-        if (newBranchCount > prevBranchCount) {
-          return `Created branch '${branchName}'`;
-        } else {
+        if (git.repo.branches[branchName]) {
           throw new Error(`Branch '${branchName}' already exists`);
         }
+        git.createBranch(branchName);
+        return `Created branch '${branchName}'`;
       }
 
     case 'log':
@@ -73,24 +71,24 @@ export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.g
     case 'switch':
       if (args[0] === '-b' && args[1]) {
         // Create and switch to new branch
-        const prevBranchCount = Object.keys(git.repo.branches).length;
-        git.createBranch(args[1]);
-        const newBranchCount = Object.keys(git.repo.branches).length;
-        if (newBranchCount <= prevBranchCount) {
-          throw new Error(`Branch '${args[1]}' already exists`);
+        const branchName = args[1];
+        if (git.repo.branches[branchName]) {
+          throw new Error(`Branch '${branchName}' already exists`);
         }
-        const prevHead = git.repo.head;
-        git.checkout(args[1]);
-        return `Switched to a new branch '${args[1]}'`;
+        git.createBranch(branchName);
+        git.checkout(branchName);
+        return `Switched to a new branch '${branchName}'`;
       } else if (args[0]) {
-        const prevHead = git.repo.head;
-        git.checkout(args[0]);
-        // Check if HEAD actually changed
-        const newHead = git.repo.head;
-        if (JSON.stringify(prevHead) === JSON.stringify(newHead)) {
-          throw new Error(`Ref not found: ${args[0]}`);
+        const ref = args[0];
+        if (git.repo.branches[ref]) {
+          git.checkout(ref);
+          return `Switched to branch '${ref}'`;
+        } else if (git.repo.commits[ref]) {
+          git.checkout(ref);
+          return `Switched to commit ${ref} (detached)`;
+        } else {
+          throw new Error(`Ref not found: ${ref}`);
         }
-        return `Switched to '${args[0]}'`;
       } else {
         throw new Error('checkout/switch requires a branch or commit');
       }
@@ -135,8 +133,22 @@ export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.g
       if (!git.repo.branches[args[0]]) {
         throw new Error(`Branch not found: ${args[0]}`);
       }
-      git.merge(args[0]);
-      return `Merged '${args[0]}' into current branch`;
+      
+      const currentBranch = git.repo.head.ref;
+      const targetTip = getBranchTip(git.repo, currentBranch);
+      const fromTip = getBranchTip(git.repo, args[0]);
+      
+      if (targetTip === fromTip) {
+        return 'Already up-to-date';
+      }
+      
+      if (targetTip && fromTip && isAncestor(git.repo.commits, targetTip, fromTip)) {
+        git.merge(args[0]);
+        return `Fast-forwarded '${currentBranch}' to '${args[0]}'`;
+      } else {
+        git.merge(args[0]);
+        return `Merged '${args[0]}' into '${currentBranch}' creating a merge commit`;
+      }
 
     case 'rebase':
       if (!args[0]) throw new Error('rebase requires a branch name');
@@ -146,6 +158,14 @@ export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.g
       if (!git.repo.branches[args[0]]) {
         throw new Error(`Branch not found: ${args[0]}`);
       }
+      
+      const curTip = getHeadCommitId(git.repo);
+      const ontoTip = getBranchTip(git.repo, args[0]);
+      
+      if (curTip && ontoTip && isAncestor(git.repo.commits, ontoTip, curTip)) {
+        return 'Already up-to-date';
+      }
+      
       git.rebase(args[0]);
       return `Successfully rebased onto '${args[0]}'`;
 

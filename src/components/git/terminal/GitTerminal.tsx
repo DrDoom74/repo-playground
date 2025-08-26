@@ -76,6 +76,12 @@ export function GitTerminal({ key }: GitTerminalProps = {}) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      inputRef.current?.focus();
+      return;
+    }
+    
     if (e.key === 'Enter') {
       executeCmd();
     } else if (e.key === 'ArrowUp') {
@@ -164,6 +170,7 @@ export function GitTerminal({ key }: GitTerminalProps = {}) {
             size="sm"
             disabled={!command.trim()}
             className="px-3"
+            tabIndex={-1}
           >
             <Play className="h-4 w-4" />
           </Button>
