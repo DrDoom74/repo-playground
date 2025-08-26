@@ -27,8 +27,15 @@ export function executeCommand(cmd: string, git: ReturnType<typeof useGitStore.g
       return formatStatus(git.repo);
 
     case 'branch':
-      const showAll = args.includes('-a');
-      return formatBranches(git.repo, showAll);
+      if (args.length === 0 || args[0] === '-a') {
+        const showAll = args.includes('-a');
+        return formatBranches(git.repo, showAll);
+      } else {
+        // Create new branch
+        const branchName = args[0];
+        git.createBranch(branchName);
+        return `Created branch '${branchName}'`;
+      }
 
     case 'log':
       const oneline = args.includes('--oneline');
