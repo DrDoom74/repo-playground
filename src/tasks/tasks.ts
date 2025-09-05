@@ -495,7 +495,7 @@ HEAD должен указывать на ветку **feature** вместо **
 ## Цель
 - Ветка **new-feature** должна содержать свой коммит + коммит из main
 - В ветке **new-feature** должен быть merge-коммит
-- На **new-feature** должно быть 4 коммита всего
+- На **new-feature** должно быть 5 коммитов всего
     `,
     initial: {
       commits: {
@@ -510,7 +510,7 @@ HEAD должен указывать на ветку **feature** вместо **
     allowedOps: ['branch.create', 'checkout', 'commit', 'merge'],
     target: [
       { type: 'BRANCH_EXISTS', branch: 'new-feature', exists: true },
-      { type: 'COMMIT_COUNT_ON_BRANCH', branch: 'new-feature', eq: 4 },
+      { type: 'COMMIT_COUNT_ON_BRANCH', branch: 'new-feature', eq: 5 },
       { type: 'HAS_MERGE_COMMIT_ON_BRANCH', branch: 'new-feature' },
       { type: 'HEAD_AT_BRANCH', branch: 'new-feature' },
     ],
