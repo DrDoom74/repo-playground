@@ -122,8 +122,18 @@ export function GitTerminal({ key }: GitTerminalProps = {}) {
     return `(${branch})`;
   };
 
+  const handleCardKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      inputRef.current?.focus();
+    }
+  };
+
   return (
-    <Card className="h-[500px] flex flex-col">
+    <Card 
+      className="h-full min-h-[300px] flex flex-col" 
+      onKeyDownCapture={handleCardKeyDown}
+    >
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Terminal className="h-4 w-4" />
@@ -131,7 +141,7 @@ export function GitTerminal({ key }: GitTerminalProps = {}) {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-3 gap-3 min-h-0">
-        <ScrollArea className="flex-1 border border-border rounded p-3 bg-muted/20">
+        <ScrollArea className="flex-1 border border-border rounded p-3 bg-muted/20" tabIndex={-1}>
           <div className="font-mono text-sm space-y-1">
             {history.map((line, index) => (
               <div

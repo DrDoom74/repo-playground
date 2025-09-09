@@ -18,7 +18,7 @@ export default function TasksPage() {
   const [taskIdx, setTaskIdx] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [hasCompletedOnLoad, setHasCompletedOnLoad] = useState(false);
+  
   const [terminalKey, setTerminalKey] = useState(0);
   const currentTask = tasks[taskIdx];
   const { progress, updateProgress } = useProgress();
@@ -38,14 +38,11 @@ export default function TasksPage() {
     setShowHint(false);
     setShowExplanation(false);
     setTerminalKey(prev => prev + 1);
-    // Check if task is already completed on load to prevent auto-completion
-    const isCompletedOnLoad = currentTask.target.every(assertion => checkAssertion(currentTask.initial, assertion));
-    setHasCompletedOnLoad(isCompletedOnLoad);
   }, [taskIdx, currentTask.initial]);
 
   useEffect(() => {
-    // Only mark as completed if it wasn't completed on initial load
-    if (isCompleted && !hasCompletedOnLoad) {
+    // Only mark as completed if user has actually run commands (prevent auto-completion)
+    if (isCompleted && git.history.length > 0) {
       const baseScore = currentTask.maxScore;
       const penalty = (showHint ? 2 : 0) + (showExplanation ? 5 : 0);
       const score = Math.max(0, baseScore - penalty);
@@ -63,7 +60,7 @@ export default function TasksPage() {
         });
       }
     }
-  }, [isCompleted, hasCompletedOnLoad, showHint, showExplanation, currentTask, progress, updateProgress]);
+  }, [isCompleted, git.history.length, showHint, showExplanation, currentTask, progress, updateProgress]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -111,8 +108,21 @@ export default function TasksPage() {
               
               <div className="grid grid-cols-1 gap-4">
                 <BranchOverview />
-                <div className="h-[300px] relative z-0 mb-4">
+                <div className="h-[300px] overflow-hidden mb-4">
                   <GitTerminal key={terminalKey} />
+                </div>
+                
+                {/* Action buttons - moved right after terminal */}
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={resetTask} className="text-xs min-w-0">
+                    Сбросить
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowHint(!showHint)} className="text-xs min-w-0 truncate">
+                    {showHint ? 'Скрыть подсказку' : 'Подсказку'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)} className="text-xs min-w-0 truncate">
+                    {showExplanation ? 'Скрыть объяснение' : 'Объяснение'}
+                  </Button>
                 </div>
               </div>
               
@@ -122,19 +132,6 @@ export default function TasksPage() {
                   currentState={git.repo}
                   targetAssertions={currentTask.target}
                 />
-              </div>
-
-              {/* Action buttons - with clear separation */}
-              <div className="border-t pt-4 flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={resetTask} className="text-xs min-w-0">
-                  Сбросить
-                </Button>
-                <Button variant="outline" onClick={() => setShowHint(!showHint)} className="text-xs min-w-0 truncate">
-                  {showHint ? 'Скрыть подсказку' : 'Подсказку'}
-                </Button>
-                <Button variant="outline" onClick={() => setShowExplanation(!showExplanation)} className="text-xs min-w-0 truncate">
-                  {showExplanation ? 'Скрыть объяснение' : 'Объяснение'}
-                </Button>
               </div>
               
               {/* Hint and explanation sections */}
@@ -199,7 +196,7 @@ export default function TasksPage() {
                   <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
                 </div>
                 
-                <div className="h-[400px] relative z-0 mb-4">
+                <div className="h-[400px] overflow-hidden mb-4">
                   <GitTerminal key={terminalKey} />
                 </div>
                 
