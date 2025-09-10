@@ -1,4 +1,7 @@
+import { tasks } from '@/tasks/tasks';
+
 export default function Footer() {
+  const maxPossibleScore = tasks.length * 3;
   
   return (
     <footer className="border-t mt-10">
@@ -11,7 +14,12 @@ export default function Footer() {
             <a href="https://youtube.com" target="_blank" rel="noreferrer">YouTube</a>
             <a href="#" target="_blank" rel="noreferrer">Сайт с тренажёрами</a>
           </nav>
-          <div>© {new Date().getFullYear()}</div>
+          <div className="flex flex-col items-center md:items-end gap-1">
+            <div>© {new Date().getFullYear()}</div>
+            <div className="text-xs text-muted-foreground">
+              Макс. очков: {maxPossibleScore}
+            </div>
+          </div>
         </div>
       </div>
     </footer>

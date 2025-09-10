@@ -8,6 +8,39 @@ export default function TheoryPage() {
       <Header />
       <main className="container mx-auto py-8 grid gap-6 md:grid-cols-2">
         <Card>
+          <CardHeader><CardTitle>Справочник команд</CardTitle></CardHeader>
+          <CardContent className="text-sm space-y-3">
+            <div>
+              <code className="bg-muted px-2 py-1 rounded text-sm">git checkout &lt;branch&gt;</code>
+              <p className="text-muted-foreground mt-1">Переключиться на ветку</p>
+            </div>
+            <div>
+              <code className="bg-muted px-2 py-1 rounded text-sm">git branch &lt;name&gt;</code>
+              <p className="text-muted-foreground mt-1">Создать новую ветку</p>
+            </div>
+            <div>
+              <code className="bg-muted px-2 py-1 rounded text-sm">git commit -m "&lt;message&gt;"</code>
+              <p className="text-muted-foreground mt-1">Создать коммит</p>
+            </div>
+            <div>
+              <code className="bg-muted px-2 py-1 rounded text-sm">git merge &lt;branch&gt;</code>
+              <p className="text-muted-foreground mt-1">Слить ветку</p>
+            </div>
+            <div>
+              <code className="bg-muted px-2 py-1 rounded text-sm">git rebase &lt;branch&gt;</code>
+              <p className="text-muted-foreground mt-1">Перебазировать на ветку</p>
+            </div>
+            <div>
+              <code className="bg-muted px-2 py-1 rounded text-sm">git cherry-pick &lt;commit&gt;</code>
+              <p className="text-muted-foreground mt-1">Скопировать коммит</p>
+            </div>
+            <div>
+              <code className="bg-muted px-2 py-1 rounded text-sm">git reset --hard &lt;commit&gt;</code>
+              <p className="text-muted-foreground mt-1">Откатиться на коммит</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
           <CardHeader><CardTitle>Ветка</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>Ветка — это движущийся указатель на коммит. Создание ветки не меняет файлы.</p>

@@ -43,20 +43,29 @@ export default function TasksPage() {
   useEffect(() => {
     // Only mark as completed if user has actually run commands (prevent auto-completion)
     if (isCompleted && git.history.length > 0) {
-      const baseScore = currentTask.maxScore;
-      const penalty = (showHint ? 2 : 0) + (showExplanation ? 5 : 0);
-      const score = Math.max(0, baseScore - penalty);
-      
       if (!progress.solvedTaskIds.includes(currentTask.id)) {
+        // Calculate score based on hints/explanations used
+        let score = 3; // Full score for solving without help
+        if (showHint && showExplanation) {
+          score = 1; // Used both hint and explanation
+        } else if (showHint || showExplanation) {
+          score = 2; // Used either hint or explanation
+        }
+        
         const newProgress = {
           ...progress,
           solvedTaskIds: [...progress.solvedTaskIds, currentTask.id],
           scoreByTask: { ...progress.scoreByTask, [currentTask.id]: score }
         };
         updateProgress(newProgress);
+        
+        const scoreText = score === 3 ? "3 очка (без подсказок)" : 
+                         score === 2 ? "2 очка (с подсказкой)" : 
+                         "1 очко (с подсказкой и объяснением)";
+        
         toast({ 
           title: 'Задача выполнена! 🎉', 
-          description: `Получено баллов: ${score}/${baseScore}` 
+          description: `Вы получили ${scoreText}` 
         });
       }
     }
