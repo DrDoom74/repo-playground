@@ -375,6 +375,8 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'NO_MERGE_COMMITS_ON_BRANCH', branch: 'main' },
       { type: 'LINEAR_HISTORY', branch: 'main' },
       { type: 'BRANCH_CONTAINS_COMMITS', branch: 'main', commits: ['R1'] },
+      { type: 'BRANCH_REBASED_ONTO', branch: 'feature', onto: 'main' },
+      { type: 'HEAD_AT_BRANCH', branch: 'main' },
     ],
     hint: 'Перебазируй feature на main, затем переключись на main и сделай fast-forward merge.',
     explanation: 'Rebase сделал возможным fast-forward merge. Результат: линейная история без merge-коммитов.',

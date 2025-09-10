@@ -1,6 +1,8 @@
 import { tasks } from '@/tasks/tasks';
+import { useProgress } from '@/hooks/useProgress';
 
 export default function Footer() {
+  const { totalScore } = useProgress();
   const maxPossibleScore = tasks.length * 3;
   
   return (
@@ -17,7 +19,7 @@ export default function Footer() {
           <div className="flex flex-col items-center md:items-end gap-1">
             <div>© {new Date().getFullYear()}</div>
             <div className="text-xs text-muted-foreground">
-              Макс. очков: {maxPossibleScore}
+              Очки: {totalScore}/{maxPossibleScore}
             </div>
           </div>
         </div>
