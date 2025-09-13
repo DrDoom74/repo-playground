@@ -5,6 +5,7 @@ import { GitTerminal } from '@/components/git/terminal/GitTerminal';
 import { BranchOverview } from '@/components/git/BranchOverview';
 import { TerminalHints } from '@/components/git/terminal/TerminalHints';
 import { TaskFeedback } from '@/components/tasks/TaskFeedback';
+import { TaskDescription } from '@/components/ui/task-description';
 import { tasks } from '@/tasks/tasks';
 import { useGitStore } from '@/state/gitStore';
 import { checkAssertion } from '@/tasks/assertions';
@@ -111,9 +112,7 @@ export default function TasksPage() {
               <CardTitle className="text-lg">{currentTask.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="prose prose-sm max-w-none dark:prose-invert text-sm">
-                <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
-              </div>
+              <TaskDescription description={currentTask.description} />
               
               <div className="grid grid-cols-1 gap-4">
                 <BranchOverview />
@@ -201,9 +200,7 @@ export default function TasksPage() {
                 <CardTitle>{currentTask.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <div dangerouslySetInnerHTML={{ __html: currentTask.description.replace(/\n/g, '<br>') }} />
-                </div>
+                <TaskDescription description={currentTask.description} />
                 
                 <div className="h-[400px] overflow-hidden mb-4">
                   <GitTerminal key={terminalKey} />

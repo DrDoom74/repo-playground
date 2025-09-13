@@ -5,9 +5,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Menu } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useProgress } from '@/hooks/useProgress';
+import { tasks } from '@/tasks/tasks';
 
 export default function Header() {
   const { totalScore } = useProgress();
+  const maxPossibleScore = tasks.length * 3;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const resetProgress = () => {
@@ -75,7 +77,7 @@ export default function Header() {
                 Теория
               </NavLink>
               <div className="border-t pt-4 mt-4">
-                <div className="text-primary font-medium mb-3 px-4">Очки: {totalScore}</div>
+                <div className="text-primary font-medium mb-3 px-4">Очки: {totalScore}/{maxPossibleScore}</div>
                 <Button 
                   variant="secondary" 
                   onClick={resetProgress}
@@ -90,7 +92,7 @@ export default function Header() {
         
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-4">
-          <div className="text-primary font-medium">Очки: {totalScore}</div>
+          <div className="text-primary font-medium">Очки: {totalScore}/{maxPossibleScore}</div>
           <Button variant="secondary" onClick={resetProgress}>Сброс прогресса</Button>
         </div>
       </div>

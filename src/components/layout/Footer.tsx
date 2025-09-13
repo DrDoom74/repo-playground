@@ -16,12 +16,7 @@ export default function Footer() {
             <a href="https://youtube.com" target="_blank" rel="noreferrer">YouTube</a>
             <a href="#" target="_blank" rel="noreferrer">Сайт с тренажёрами</a>
           </nav>
-          <div className="flex flex-col items-center md:items-end gap-1">
-            <div>© {new Date().getFullYear()}</div>
-            <div className="text-xs text-muted-foreground">
-              Очки: {totalScore}/{maxPossibleScore}
-            </div>
-          </div>
+          <div>© {new Date().getFullYear()}</div>
         </div>
       </div>
     </footer>
