@@ -223,7 +223,7 @@ HEAD должен указывать на ветку **feature** вместо **
 ## Что такое cherry-pick?
 - Копирует конкретный коммит в текущую ветку
 - Создаёт новый коммит с теми же изменениями
-- Полезно для переноса отдельных фикс
+- Полезно для переноса отдельных фиксов
 
 ## Текущая ситуация
 - В feature есть важный коммит D с фиксом
@@ -351,7 +351,7 @@ HEAD должен указывать на ветку **feature** вместо **
 
 ## Почему именно эта последовательность?
 1. **Rebase feature на main** — переносит коммиты feature поверх main, но feature остаётся впереди
-2. **Merge feature в main** — перемещает указатель main к кончику feature (fast-forward)
+2. **Merge feature в main** — перемещает указатель main к концу feature (fast-forward)
 
 ## Важно понимать разницу:
 - Просто rebase оставляет main позади
@@ -427,8 +427,8 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'LINEAR_HISTORY', branch: 'main' },
       { type: 'HEAD_AT_BRANCH', branch: 'main' },
       { type: 'EITHER', anyOf: [
-        { type: 'BRANCH_CONTAINS_COMMITS', branch: 'main', commits: ['R1'] },
-        { type: 'BRANCH_CONTAINS_COMMITS', branch: 'main', commits: ['P1'] },
+        { type: 'BRANCH_CONTAINS_COMMITS', branch: 'main', commits: ['R1', 'R2'] },
+        { type: 'BRANCH_CONTAINS_COMMITS', branch: 'main', commits: ['P1', 'P2'] },
         { type: 'COMMIT_COUNT_ON_BRANCH', branch: 'main', gte: 4 },
       ]},
     ],
@@ -455,7 +455,7 @@ HEAD должен указывать на ветку **feature** вместо **
 - Команда предпочитает чистую историю
 
 ## Задание
-Выбери и примени наиболее подходящий инструмент. Обоснуй выбор!
+Выбери и примени наиболее подходящий инструмент.
 
 ## Цель
 Перенеси изменения из feature в main наиболее подходящим способом.
@@ -604,7 +604,6 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'BRANCH_EXISTS', branch: 'hotfix-branch', exists: true },
       { type: 'COMMIT_COUNT_ON_BRANCH', branch: 'main', eq: 4 },
       { type: 'HEAD_AT_BRANCH', branch: 'main' },
-      { type: 'COMMIT_MESSAGE_CONTAINS', commit: 'P1', text: 'cherry-pick:' },
     ],
     hint: 'Создай ветку, сделай 2 коммита, переключись на main, коммить, затем cherry-pick второго коммита из hotfix.',
     explanation: 'Cherry-pick позволил перенести только нужный коммит, оставив экспериментальный код в отдельной ветке.',

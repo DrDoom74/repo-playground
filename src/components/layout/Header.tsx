@@ -8,16 +8,16 @@ import { useProgress } from '@/hooks/useProgress';
 import { tasks } from '@/tasks/tasks';
 
 export default function Header() {
-  const { totalScore } = useProgress();
+  const { totalScore, resetProgress: resetProgressHook } = useProgress();
   const maxPossibleScore = tasks.length * 3;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const resetProgress = () => {
-    localStorage.removeItem('git-trainer:v1:progress');
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new CustomEvent('progress-reset'));
+    resetProgressHook();
     toast({ title: 'Прогресс сброшен' });
     setIsMenuOpen(false);
+    // Force page reload to ensure clean state
+    window.location.reload();
   };
 
   const navClass = ({ isActive }: any) =>
