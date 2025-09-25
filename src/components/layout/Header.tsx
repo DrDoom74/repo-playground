@@ -39,7 +39,7 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-1">
           <NavLink className={navClass} to="/tasks">Задачи</NavLink>
           <NavLink className={navClass} to="/sandbox">Песочница</NavLink>
-          <NavLink className={navClass} to="/theory">Теория</NavLink>
+          <NavLink className={navClass} to="/theory">Помощь</NavLink>
         </nav>
         
         {/* Mobile Navigation */}
@@ -74,7 +74,7 @@ export default function Header() {
                 to="/theory"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Теория
+                Помощь
               </NavLink>
               <div className="border-t pt-4 mt-4">
                 <div className="text-primary font-medium mb-3 px-4">Очки: {totalScore}/{maxPossibleScore}</div>

@@ -8,6 +8,16 @@ export default function TheoryPage() {
       <Header />
       <main className="container mx-auto py-8 grid gap-6 md:grid-cols-2">
         <Card className="md:col-span-2">
+          <CardHeader><CardTitle>Помощь в решении задач</CardTitle></CardHeader>
+          <CardContent className="text-sm space-y-3">
+            <ul className="space-y-2 text-muted-foreground">
+              <li>• В разделе branches показывается текущая ветка и последний коммит</li>
+              <li>• С помощью команды "git log" — можно отследить историю коммитов в ветке</li>
+              <li>• Синтаксис определенной команды можно посмотреть в разделе теория</li>
+            </ul>
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-2">
           <CardHeader><CardTitle>Справочник команд</CardTitle></CardHeader>
           <CardContent className="text-sm space-y-4 grid md:grid-cols-2 gap-4">
             <div>
