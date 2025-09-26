@@ -37,7 +37,7 @@ HEAD должен указывать на ветку **feature** вместо **
     },
     allowedOps: ['checkout'],
     target: [{ type: 'HEAD_AT_BRANCH', branch: 'feature' }],
-    hint: 'Используй команду `git checkout feature` или нажми кнопку "Переключиться на feature" в быстрых действиях.',
+    hint: 'Используй команду `git checkout <название_ветки>` для переключения на указанную ветку.',
     explanation: 'Команда `git checkout feature` перемещает HEAD на ветку feature. Теперь все новые коммиты будут добавлены к ветке feature.',
     maxScore: 8,
   },
@@ -47,7 +47,7 @@ HEAD должен указывать на ветку **feature** вместо **
     level: 'basic',
     description: `
 ## Задача
-Создай новую ветку **hotfix** от текущего коммита (B).
+Создай новую ветку hotfix от текущего коммита (B), оставаясь на main.
 
 ## Что такое ветка в Git?
 - Ветка — это просто указатель на конкретный коммит
@@ -74,7 +74,7 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'BRANCH_EXISTS', branch: 'hotfix', exists: true },
       { type: 'BRANCH_AT_COMMIT', branch: 'hotfix', commit: 'B' },
     ],
-    hint: 'Используй команду `git branch hotfix` или кнопку "Создать новую ветку" в быстрых действиях.',
+    hint: 'Используй команду `git branch <название_ветки>` для создания ветки.',
     explanation: 'Команда `git branch hotfix` создаёт новую ветку hotfix, которая указывает на текущий коммит (B). HEAD при этом остаётся на ветке main.',
     maxScore: 8,
   },
@@ -87,7 +87,7 @@ HEAD должен указывать на ветку **feature** вместо **
 Слей ветку **feature** в **main** с помощью fast-forward merge.
 
 ## Что такое Fast-forward merge?
-- Происходит, когда target-ветка (main) является родителем source-ветки (feature)
+- Простой и чистый способ объединения веток, который происходит, когда target-ветка (main) является родителем source-ветки (feature)
 - Git просто перемещает указатель target-ветки вперёд
 - **Новый merge-коммит НЕ создаётся**
 - История остаётся линейной
@@ -121,7 +121,7 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'BRANCH_AT_COMMIT', branch: 'main', commit: 'C' },
       { type: 'LINEAR_HISTORY', branch: 'main' },
     ],
-    hint: 'Fast-forward возможен, потому что main (B) является предком feature (C). Используй `git merge feature`.',
+    hint: 'Fast-forward возможен, потому что main (B) является предком feature (C). Используй `git merge <название source-ветки>`.',
     explanation: 'Команда `git merge feature` выполнила fast-forward: указатель main просто переместился на коммит C. Новый merge-коммит не был создан, поэтому история осталась линейной.',
     maxScore: 10,
   },
@@ -163,7 +163,7 @@ HEAD должен указывать на ветку **feature** вместо **
     },
     allowedOps: ['merge'],
     target: [{ type: 'HAS_MERGE_COMMIT_ON_BRANCH', branch: 'main' }],
-    hint: 'Поскольку ветки разошлись (B и C имеют разных родителей), Git создаст merge-коммит. Используй `git merge feature`.',
+    hint: 'Поскольку ветки разошлись (B и C имеют общего предка — A), Git создаст merge-коммит. Используй `git merge <имя_ветки>`.',
     explanation: 'Git создал merge-коммит, потому что ветки разошлись. Merge-коммит имеет двух родителей (B и C), объединяя изменения из обеих веток.',
     maxScore: 10,
   },
@@ -178,8 +178,8 @@ HEAD должен указывать на ветку **feature** вместо **
 ## Что такое rebase?
 - Rebase **переносит** коммиты с одной ветки на другую (не сливает!)
 - Создаёт **новые коммиты** с тем же содержимым, но новой историей
+- Переписывает идентификаторы коммитов
 - В отличие от merge, не создаёт merge-коммит, получается линейная история
-- Создаёт новые коммиты с тем же содержимым
 - Результат: линейная история
 
 ## Текущая ситуация
@@ -208,8 +208,8 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'BRANCH_REBASED_ONTO', branch: 'feature', onto: 'develop' },
       { type: 'LINEAR_HISTORY', branch: 'feature' },
     ],
-    hint: 'Используй `git rebase develop` находясь на ветке feature. Это перенесёт коммиты feature поверх develop.',
-    explanation: 'Rebase создал новый коммит с тем же содержимием, что и D, но теперь он базируется на C. История стала линейной.',
+    hint: 'Находясь на feature, выполни `git rebase develop`,
+    explanation: 'Rebase перенёс коммиты feature поверх develop, создав новые коммиты с теми же изменениями. История стала линейной.',
     maxScore: 12,
   },
   {
@@ -337,7 +337,7 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'BRANCH_EXISTS', branch: 'hotfix', exists: true },
       { type: 'BRANCH_AT_COMMIT', branch: 'hotfix', commit: 'B' },
     ],
-    hint: 'Сначала `git checkout B`, затем `git branch hotfix` для создания ветки из detached состояния.',
+    hint: 'Переключись на коммит через `git checkout B`, затем создай ветку из detached состояния.',
     explanation: 'Checkout на коммит создал detached HEAD. Затем branch создал новую ветку hotfix из текущего состояния.',
     maxScore: 10,
   },
@@ -432,8 +432,8 @@ HEAD должен указывать на ветку **feature** вместо **
         { type: 'COMMIT_COUNT_ON_BRANCH', branch: 'main', gte: 4 },
       ]},
     ],
-    hint: 'Есть несколько способов: rebase+merge, cherry-pick коммитов, или reset+commit. Выбери любой!',
-    explanation: 'Отличная работа! Ты нашёл способ интегрировать изменения, сохранив линейную историю.',
+    hint: 'Возможные варианты: rebase + FF-merge, серия cherry-pick',
+    explanation: 'Задание засчитывается, если main содержит нужные изменения и историю без merge-коммитов.',
     maxScore: 20,
   },
   {
