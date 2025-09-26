@@ -208,7 +208,7 @@ HEAD должен указывать на ветку **feature** вместо **
       { type: 'BRANCH_REBASED_ONTO', branch: 'feature', onto: 'develop' },
       { type: 'LINEAR_HISTORY', branch: 'feature' },
     ],
-    hint: 'Находясь на feature, выполни `git rebase develop`,
+    hint: 'Находясь на feature, выполни `git rebase develop`',
     explanation: 'Rebase перенёс коммиты feature поверх develop, создав новые коммиты с теми же изменениями. История стала линейной.',
     maxScore: 12,
   },
