@@ -12,9 +12,8 @@ export default function Footer() {
           <div>Школа Алексея Клименко по тестированию ПО</div>
           <nav className="flex flex-wrap gap-4 text-muted-foreground">
             <a href="https://t.me/QA_AKlimenko" target="_blank" rel="noreferrer">Telegram</a>
-            <a href="https://boosty.to/" target="_blank" rel="noreferrer">Boosty</a>
-            <a href="https://youtube.com" target="_blank" rel="noreferrer">YouTube</a>
-            <a href="#" target="_blank" rel="noreferrer">Сайт с тренажёрами</a>
+            <a href="https://boosty.to/aklimenko" target="_blank" rel="noreferrer">Boosty</a>
+            <a href="https://aklimenkoschool.ru/simulators/" target="_blank" rel="noreferrer">Другие тренажёры</a>
           </nav>
           <div>© {new Date().getFullYear()}</div>
         </div>
